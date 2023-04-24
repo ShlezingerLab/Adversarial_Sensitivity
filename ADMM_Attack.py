@@ -98,13 +98,13 @@ s_gt = s_gt.detach()
 plt.figure()
 plt.subplot (2, 1, 2)
 plt.plot(s[0], label = 'sparse signal', color='k')
-plt.plot ( s_gt ,  '.--' , label ='ADMM', color='r',linewidth=1)
+plt.plot (s_gt ,  '.--' , label ='ADMM', color='r',linewidth=1)
 plt.xlabel('Index', fontsize=10)
 plt.ylabel('Value', fontsize=10)
 plt.legend( )
 plt.show()
 
-radius_vec = np.linspace(0.01 * 0.5, 0.05, 20)
+radius_vec = np.linspace(0.01 * 0.5, 0.25, 2)
 for r in radius_vec:
     print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
 
@@ -118,18 +118,61 @@ for r in radius_vec:
     dist = (s_gt - s_attacked).norm(2).item()
     min_dist.append(dist)
 
-# plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
+plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
 plt.figure()
 plt.style.use('plot_style.txt')
 plt.plot(radius_vec, min_dist)
-plt.xlabel(r'$r$')
-plt.ylabel(r'${\|\| S_{gt}-S_{adv} \|\|}_2$')
+plt.xlabel(r'$\epsilon$')
+plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
 plt.savefig("NORM2_ADMM.pdf", bbox_inches='tight')
-
 plt.show()
 
+#
+# ISTA_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/distances_ista.npy')
+# ADMM_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/distances_admm.npy')
+#
+# plt.figure()
+# plt.style.use('plot_style.txt')
+# plt.plot(radius_vec, ISTA_min_distances, '-.')
+# plt.plot(radius_vec, ADMM_min_distances)
+# plt.legend(['ISTA', 'ADMM'])
+# plt.xlabel(r'$\epsilon$')
+# plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
+#
+# plt.savefig("f.pdf", bbox_inches='tight')
+# # plt.show()
+
 # signal_a, signal_b, title_a='sparse signal', title_b='ISTA', errors_a=None, errors_b=None
-plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
+# plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
+
+# plot observations
+# plt.grid()
+# ax = plt.subplot(2, 1, 1)
+# plt.grid()
+#
+# plt.style.use('default')
+# plt.plot(signal_a, label=r'$ x + \delta $', color='k')
+# plt.xlabel('Index', fontsize=10)
+# plt.ylabel('Value', fontsize=10)
+# plt.legend()
+#
+#
+# ax2 = plt.subplot(2, 1, 2)
+# new_pos = ax2.get_position()
+# new_pos.y0-=0.07*new_pos.y0
+# new_pos.y1-=0.07*new_pos.y1
+# ax2.set_position(new_pos)
+# plt.style.use('default')
+# plt.grid()
+# plt.plot(signal_b, '.--', label=r'$x$ ', color='r', linewidth=1)
+# plt.xlabel('Index', fontsize=10)
+# plt.ylabel('Value', fontsize=10)
+# plt.legend()
+# plt.savefig("observation_combined_f.pdf", bbox_inches='tight')
+# plt.show()
+
+
+
 # plot_x_s(adv_x.detach().numpy(), s.detach().numpy(), "attacked observation", "sparse signal")
 
 plot_x_s(signal_a=s_attacked.detach().numpy(), title_a="Attacked ADMM reconstruction",
@@ -184,7 +227,6 @@ X, Y = np.meshgrid(x, y)
 
 Z_adv = landscape_adv
 Z_gt = landscape_truth
-#
 
 
 # landscape_adv = ISTA_t_model.random_plane(ISTA_adv_model, x=adv_x, steps=40, dir_one=dir_one, dir_two=dir_two)
@@ -205,18 +247,23 @@ axs[0].view_init(30, 35)
 axs[0].contour3D(X/800, Y/800, Z_adv, 50, cmap='binary')
 axs[0].set_xlabel(r'$u_2$')
 axs[0].set_ylabel(r'$u_1$')
-axs[0].set_zlabel(r'Loss $\mathcal{L}$')
-# # plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
+axs[0].set_zlabel(r'Loss $\mathcal{L}_{adv}$')
+# plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
+# new_post = axs[1].get_position()
+new_pos = axs[1].get_position()
+new_pos.x0+=0.08*new_pos.x0
+new_pos.x1+=0.08*new_pos.x1
+axs[1].set_position(pos=new_pos)
 axs[1].contour3D(X/800, Y/800, Z_gt, 50, cmap='binary')
 axs[1].set_xlabel(r'$u_2$')
 axs[1].set_ylabel(r'$u_1$')
-axs[1].set_zlabel(r'Loss $\mathcal{L}$')
+axs[1].set_zlabel(r'Loss $\mathcal{L}_{op}$')
+
 # plt.title("Loss_gt = 0.5*||x-Hs|| + rho*||s| s.t (rho=0.01), epsilon=0.1")
 axs[1].view_init(30, 35)
 # plt.style.use('plot_style.txt')
 plt.savefig("ADMM_COMBINED_3D_LOSS.pdf", bbox_inches='tight')
 plt.show()
-# plt.show()
 # #
 
 # plt.show()

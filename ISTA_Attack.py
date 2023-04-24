@@ -119,7 +119,7 @@ ISTA_t_model = create_ISTA()
 s_gt, err_gt = ISTA_t_model(x)
 print("ISTA convergence: iterations: {0}".format(len(err_gt)))
 s_gt = s_gt.detach()
-radius_vec = np.linspace(0.01 * 0.5, 0.05 * 0.5, 20)
+radius_vec = np.linspace(0.01 * 0.5, 0.05, 40)
 for r in radius_vec:
     print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
 
@@ -235,16 +235,22 @@ axs[0].view_init(30, 35)
 axs[0].contour3D(X/800, Y/800, Z_adv, 50, cmap='binary')
 axs[0].set_xlabel(r'$u_2$')
 axs[0].set_ylabel(r'$u_1$')
-axs[0].set_zlabel(r'Loss $\mathcal{L}$')
-# # plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
+axs[0].set_zlabel(r'Loss $\mathcal{L}_{adv}$')
+# plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
+# new_post = axs[1].get_position()
+new_pos = axs[1].get_position()
+new_pos.x0+=0.08*new_pos.x0
+new_pos.x1+=0.08*new_pos.x1
+axs[1].set_position(pos=new_pos)
 axs[1].contour3D(X/800, Y/800, Z_gt, 50, cmap='binary')
 axs[1].set_xlabel(r'$u_2$')
 axs[1].set_ylabel(r'$u_1$')
-axs[1].set_zlabel(r'Loss $\mathcal{L}$')
+axs[1].set_zlabel(r'Loss $\mathcal{L}_{op}$')
+
 # plt.title("Loss_gt = 0.5*||x-Hs|| + rho*||s| s.t (rho=0.01), epsilon=0.1")
 axs[1].view_init(30, 35)
 # plt.style.use('plot_style.txt')
-plt.savefig("ADMM_COMBINED_3D_LOSS.pdf", bbox_inches='tight')
+plt.savefig("ISTA_COMBINED_3D_LOSS.pdf", bbox_inches='tight')
 plt.show()
 
 # Plotting 2D

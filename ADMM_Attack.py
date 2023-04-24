@@ -104,27 +104,28 @@ plt.ylabel('Value', fontsize=10)
 plt.legend( )
 plt.show()
 
-eps_vec = np.linspace(0.01 * 0.5, 0.05, 20)
-for e in eps_vec:
-    print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(e))
+radius_vec = np.linspace(0.01 * 0.5, 0.05, 20)
+for r in radius_vec:
+    print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
 
     ADMM_adv_model = create_ADMM()
 
-    adv_x, delta = BIM(ADMM_adv_model, x_original, s_original, eps=e)
+    adv_x, delta = BIM(ADMM_adv_model, x_original, s_original, eps=r)
     adv_x = adv_x.detach()
-
 
     s_attacked, err_attacked = ADMM_adv_model(adv_x)
     print("Attacked-ISTA convergence: iterations: {0}".format(len(err_attacked)))
     dist = (s_gt - s_attacked).norm(2).item()
     min_dist.append(dist)
 
-plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
-
+# plot_x_s(adv_x.numpy(), x.numpy(), "attacked observation", "true observation")
 plt.figure()
-plt.plot(eps_vec, min_dist)
-plt.xlabel(r'$ { \epsilon } $')
+plt.style.use('plot_style.txt')
+plt.plot(radius_vec, min_dist)
+plt.xlabel(r'$r$')
 plt.ylabel(r'${\|\| S_{gt}-S_{adv} \|\|}_2$')
+plt.savefig("NORM2_ADMM.pdf", bbox_inches='tight')
+
 plt.show()
 
 # signal_a, signal_b, title_a='sparse signal', title_b='ISTA', errors_a=None, errors_b=None
@@ -197,30 +198,26 @@ Z_gt = landscape_truth
 # ax.set_title('surface')
 # plt.show()
 
-# Plotting 3D
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.contour3D(X, Y, Z_adv, 50, cmap='binary')
-ax.set_xlabel(r'$u_2$')
-ax.set_ylabel(r'$u_1$')
-ax.set_zlabel(r'Loss $\mathcal{L}$')
-# plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
-plt.style.use('plot_style.txt')
-ax.view_init(30, 35)
-plt.savefig("ADMM_3D_LOSS_adv.pdf", bbox_inches='tight')
-
-plt.show()
-
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.contour3D(X, Y, Z_gt, 50, cmap='binary')
-ax.set_xlabel(r'$u_2$')
-ax.set_ylabel(r'$u_1$')
-ax.set_zlabel(r'Loss $\mathcal{L}$')
+fig, axs = plt.subplots(1, 2, subplot_kw={'projection': '3d'})
+plt.style.use('default')
+# plt.axes(projection='3d')
+axs[0].view_init(30, 35)
+axs[0].contour3D(X/800, Y/800, Z_adv, 50, cmap='binary')
+axs[0].set_xlabel(r'$u_2$')
+axs[0].set_ylabel(r'$u_1$')
+axs[0].set_zlabel(r'Loss $\mathcal{L}$')
+# # plt.title("Loss_adv = 0.5*||x_Adv-Hs_adv|| + rho*||s_adv| s.t (rho=0.01), epsilon=0.1")
+axs[1].contour3D(X/800, Y/800, Z_gt, 50, cmap='binary')
+axs[1].set_xlabel(r'$u_2$')
+axs[1].set_ylabel(r'$u_1$')
+axs[1].set_zlabel(r'Loss $\mathcal{L}$')
 # plt.title("Loss_gt = 0.5*||x-Hs|| + rho*||s| s.t (rho=0.01), epsilon=0.1")
-ax.view_init(30, 35)
-plt.style.use('plot_style.txt')
-plt.savefig("ADMM_3D_LOSS_gt.pdf", bbox_inches='tight')
+axs[1].view_init(30, 35)
+# plt.style.use('plot_style.txt')
+plt.savefig("ADMM_COMBINED_3D_LOSS.pdf", bbox_inches='tight')
+plt.show()
+# plt.show()
+# #
 
 # plt.show()
 

@@ -276,7 +276,7 @@ s = torch.from_numpy(s).float()
 
 
 # x = Hs+w s.t w~N(0,1)
-x = np.dot(H, s.T) + 0.01 * np.random.randn(n, 1)
+x = np.dot(H, s.T) + 0.01 * np.random.randn(n,1)
 x = torch.from_numpy(x).float()
 
 step_size = 0.1
@@ -313,7 +313,7 @@ def plot_x_s(signal_a, signal_b=None, title_a='sparse signal', title_b='ISTA', e
         plt.style.use('plot_style.txt')
 
     plt.subplot(2, 1, 2)
-    plt.style.use('plot_style.txt')
+    # plt.style.use('plot_style.txt')
 
     plt.plot(signal_a, label=title_a, color='k')
 
@@ -326,4 +326,5 @@ def plot_x_s(signal_a, signal_b=None, title_a='sparse signal', title_b='ISTA', e
     # plt.xlabel('Index', fontsize=10)
     # plt.ylabel('Value', fontsize=10)
     plt.legend()
+    plt.savefig("p.pdf", bbox_inches='tight')
     plt.show()

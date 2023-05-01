@@ -27,7 +27,7 @@ H_train = torch.randn(B, train_size, N, M)
 H_valid = torch.randn(B, valid_size, N, M)
 # test data set
 # H_test = torch.randn(B, test_size, N, M)
-H_test = torch.load('H_for_Elad_16x100x4x12.pt').real.float()
+H_test = torch.load(r'matrices/H_for_Elad_16x100x4x12.pt')
 # H_test = H_test[:,0,:,:].reshape((16,1,4,12))
 # ---- Classical PGA ----
 # parameters defining

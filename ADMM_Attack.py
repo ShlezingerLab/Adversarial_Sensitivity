@@ -53,7 +53,7 @@ for sig_idx, (x_original, s_original) in enumerate(signals):
 
         dist_total[sig_idx, r_idx] = (s_gt - s_attacked).norm(2).item()
 
-np.save('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/ADMM_total_norm.npy', dist_total)
+np.save('matrices/ADMM_total_norm.npy', dist_total)
 
 ##########################################################
 
@@ -66,8 +66,8 @@ plot_conv_rec_graph(s_attacked.numpy(), s_gt.numpy(),
 
 plot_norm_graph(radius_vec, dist_total.mean(axis=0), fname="NORM2_ADMM.pdf")
 
-# ISTA_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/distances_ista.npy')
-# ADMM_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/distances_admm.npy')
+# ISTA_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrices/distances_ista.npy')
+# ADMM_min_distances = np.load('/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrices/distances_admm.npy')
 
 # plot observations
 plot_observations(adv_x, x, fname="observation_combined_f.pdf")

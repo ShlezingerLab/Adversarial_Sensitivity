@@ -14,7 +14,7 @@ import matplotlib
 
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
-FIGURES_PATH = r'/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/matrixes/'
+FIGURES_PATH = r'/matrices/'
 
 # https://www.youtube.com/watch?v=m73Fy_rHV0A&ab_channel=ConstantineCaramanis
 # dimensions of the sparse signal, measurement and sparsity level

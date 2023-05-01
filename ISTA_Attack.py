@@ -47,7 +47,7 @@ for sig_idx, (x_original, s_original) in enumerate(signals):
         dist_total[sig_idx, r_idx] = (s_gt - s_attacked).norm(2).item()
 
 ##########################################################
-np.save('graphs/ISTA_total_norm', dist_total)
+np.save('matrices/ISTA_total_norm.npy', dist_total)
 # plot_observations(adv_x, x_original, 'observation.pdf')
 # plot_observations(s_attacked, s_original[0], 'observation.pdf')
 plot_norm_graph(radius_vec, dist_total.mean(axis=0), fname='ISTA_norm2.pdf')

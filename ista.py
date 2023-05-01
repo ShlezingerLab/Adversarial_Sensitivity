@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.linalg import orth
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
@@ -12,6 +11,8 @@ import math
 from loss_landscapes.model_interface.model_wrapper import ModelWrapper, wrap_model
 from loss_landscapes.model_interface.model_parameters import rand_u_like, orthogonal_to
 from loss_landscapes.metrics.metric import Metric
+
+from utills import m, H
 
 
 # ISTA
@@ -128,19 +129,19 @@ class ISTA(nn.Module):
         end_model_wrapper = wrap_model(copy.deepcopy(model_end) if deepcopy_model else model_end)
 
         start_point = model_start_wrapper.get_module_parameters()
-        start_point = start_point - start_point/2
+        start_point = start_point - start_point / 2
         end_point = end_model_wrapper.get_module_parameters()
-        end_point = end_point+end_point/2
+        end_point = end_point + end_point / 2
 
         direction = ((end_point - start_point)) / steps
 
         data_values = []
 
         s = start_point.parameters[0]
-        s.sub_(s/2)
+        s.sub_(s / 2)
         data_values.append(model_start.loss_func(s, x_sig))
 
-        for i in range(steps- 1):
+        for i in range(steps - 1):
             # add a step along the line to the model parameters, then evaluate
             start_point.add_(direction)
             s = start_point.parameters[0]
@@ -198,7 +199,7 @@ class ISTA(nn.Module):
         gt_start_point = gt_model_start_point.get_module_parameters()
         adv_start_point = adv_model_start_wrapper.get_module_parameters()
 
-        avg_start_point = (gt_start_point + adv_start_point)/2
+        avg_start_point = (gt_start_point + adv_start_point) / 2
 
         # scale to match steps and total distance
         dir_one.mul_(distance / steps)
@@ -253,36 +254,17 @@ class ISTA(nn.Module):
 
             avg_start_point.add_(dir_one)
 
-
         return np.array(gt_data_matrix), np.array(adv_data_matrix)
 
 
 # https://www.youtube.com/watch?v=m73Fy_rHV0A&ab_channel=ConstantineCaramanis
 # dimensions of the sparse signal, measurement and sparsity level
 
-m, n, k = 1000, 256, 5
-Psi = np.eye(m)
-Phi = np.random.randn(n, m)
-Phi = np.transpose(orth(np.transpose(Phi)))
-H = Phi
-H = torch.from_numpy(H).float()
-
-# Generate sparse signal
-s = np.zeros((1, m))
-index_k = np.random.choice(m, k, replace=False)
-s[:, index_k] = 0.5 * np.random.randn(k, 1).reshape([1, k])
-s = torch.from_numpy(s).float()
-# pdb.set_trace()
-
-
-# x = Hs+w s.t w~N(0,1)
-x = np.dot(H, s.T) + 0.01 * np.random.randn(n,1)
-x = torch.from_numpy(x).float()
-
+# ISTA configuration
 step_size = 0.1
-max_iter = 2000
+max_iter = 10000
 rho = 0.01
-eps_threshold = 1e-5
+eps_threshold = 1e-3
 
 
 def create_ISTA(H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_threshold=eps_threshold):
@@ -292,39 +274,3 @@ def create_ISTA(H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_thresh
 ISTA_t_model = ISTA(H, step_size, rho, max_iter, eps_threshold)
 ISTA_adv_model = ISTA(H, step_size, rho, max_iter, eps_threshold)
 
-# s_ISTA, errors = ISTA_t_model(x)
-
-
-def plot_x_s(signal_a, signal_b=None, title_a='sparse signal', title_b='ISTA', errors_a=None, errors_b=None,
-             print_truth_signal=None, errors_a_lbl=None, errors_b_lbl=None):
-    plt.figure(figsize=(8, 8))
-
-    if errors_a is not None or errors_b is not None:
-        plt.subplot(2, 1, 1)
-        if errors_a:
-            plt.plot(errors_a, label=errors_a_lbl)
-
-        if errors_b:
-            plt.plot(errors_b, label=errors_b_lbl)
-
-        plt.xlabel('iteration', fontsize=10)
-        plt.ylabel('squared error', fontsize=10)
-        plt.legend()
-        plt.style.use('plot_style.txt')
-
-    plt.subplot(2, 1, 2)
-    # plt.style.use('plot_style.txt')
-
-    plt.plot(signal_a, label=title_a, color='k')
-
-    if signal_b is not None:
-        plt.plot(signal_b, '.--', label=title_b, color='r', linewidth=1)
-
-    if print_truth_signal:
-        plt.plot(s[0], '.--', label="Ground truth signal", color='g', linewidth=2)
-
-    # plt.xlabel('Index', fontsize=10)
-    # plt.ylabel('Value', fontsize=10)
-    plt.legend()
-    plt.savefig("p.pdf", bbox_inches='tight')
-    plt.show()

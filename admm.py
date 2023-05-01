@@ -1,6 +1,7 @@
+import math
+import copy
+
 import numpy as np
-from scipy.linalg import orth
-import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
 
@@ -8,11 +9,7 @@ from loss_landscapes.model_interface.model_wrapper import ModelWrapper, wrap_mod
 from loss_landscapes.model_interface.model_parameters import rand_u_like, orthogonal_to
 from loss_landscapes.metrics.metric import Metric
 
-np.random.seed(0)
-import math
-import pdb
-
-import copy
+from utills import m, H
 
 
 class ADMM(nn.Module):
@@ -32,7 +29,7 @@ class ADMM(nn.Module):
         self.H = H
 
         # left_term = (H^TH+2λI)^-1
-        self.left_term = torch.linalg.inv(torch.matmul(self.H.T,self.H) + self.rho*torch.eye(self.H.shape[1]))
+        self.left_term = torch.linalg.inv(torch.matmul(self.H.T, self.H) + self.rho * torch.eye(self.H.shape[1]))
 
         # initial estimate
         self.s = torch.zeros((H.shape[1], 1))
@@ -50,7 +47,7 @@ class ADMM(nn.Module):
             s_prev, v_prev, u_prev = self.s, self.v, self.u
 
             # Update s_k+1 = ((H^T)H+2λI)^−1(H^T x+2λ(vk−uk)).
-            right_term = torch.matmul(H.T,x) + self.rho * (v_prev - u_prev)
+            right_term = torch.matmul(H.T, x) + self.rho * (v_prev - u_prev)
             self.s = self.left_term @ right_term
 
             # Update vk+1 = prox_(1/2λϕ)(sk+1 + uk)
@@ -134,19 +131,19 @@ class ADMM(nn.Module):
         end_model_wrapper = wrap_model(copy_ADMM(model_end) if deepcopy_model else model_end)
 
         start_point = model_start_wrapper.get_module_parameters()
-        start_point = start_point - start_point/2
+        start_point = start_point - start_point / 2
         end_point = end_model_wrapper.get_module_parameters()
-        end_point = end_point+end_point/2
+        end_point = end_point + end_point / 2
 
         direction = ((end_point - start_point)) / steps
 
         data_values = []
 
         s = start_point.parameters[0]
-        s.sub_(s/2)
+        s.sub_(s / 2)
         data_values.append(model_start.loss_func(s, x_sig))
 
-        for i in range(steps- 1):
+        for i in range(steps - 1):
             # add a step along the line to the model parameters, then evaluate
             start_point.add_(direction)
             s = start_point.parameters[0]
@@ -263,91 +260,24 @@ class ADMM(nn.Module):
         return np.array(gt_data_matrix), np.array(adv_data_matrix)
 
 
-
-
-# https://www.youtube.com/watch?v=m73Fy_rHV0A&ab_channel=ConstantineCaramanis
-# dimensions of the sparse signal, measurement and sparsity level
-
-m, n, k = 1000, 256, 5
-Psi = np.eye(m)
-Phi = np.random.randn(n, m)
-Phi = np.transpose(orth(np.transpose(Phi)))
-Phi = torch.from_numpy(Phi).float()
-H = Phi
-
-# Generate sparse signal
-s = np.zeros((1, m))
-index_k = np.random.choice(m, k, replace=False)
-s[:, index_k] = 0.5 * np.random.randn(k, 1).reshape([1, k])
-s = torch.from_numpy(s).float()
-
-# x = Hs+w s.t w~N(0,1) nxm x m1
-x = np.dot(H, s.T) + 0.01 * np.random.randn(n, 1)
-x = torch.from_numpy(x).float()
-
-plt.figure(figsize=(8, 8))
-plt.subplot(2, 1, 1)
-plt.plot(x, label='observation')
-plt.xlabel('Index', fontsize=10)
-plt.ylabel('Value', fontsize=10)
-plt.legend()
-plt.subplot(2, 1, 2)
-
-plt.plot(s[0], label='sparse signal', color='k')
-plt.xlabel('Index', fontsize=10)
-plt.ylabel('Value', fontsize=10)
-plt.legend()
-plt.show()
-
-"""# Take the ADMM - to a finite K iterations. learning the hyperpameters. 
-and verify how many iterations it takes to converge into the same performance as the Vanilla ADMM.
-
-We can see that while the high-dimensional vector is saprse, its lower-dimensional observations do not share this property.
-
-### Apply iterative optimizer
-Next, let's apply the model-based iterative optimizer
-"""
-
-step_size = 0.00005  # mu
-max_iter = 10000
-rho = 0.01
-lambda_ = 12.5
-# lambda = 200
-eps_threshold = 1e-3
-
-# init of the lambda/rho parameters
+# ADMM configuration
 # https://codereview.stackexchange.com/questions/108263/alternating-direction-method-of-multipliers
 
-# w, v = np.linalg.eig(H.T.dot(H))
-# lambda_ = sqrt(2*log(n, 10))
-# rho = 1/(np.amax(np.absolute(w)))
+# Does one have same step size? which parameters must be the same?
+step_size = 0.00005
+max_iter = 10000
+rho = 0.01
+eps_threshold = 1e-3
+lambda_ = 12.5
 
 
 def create_ADMM(H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_threshold=eps_threshold):
     return ADMM(H, step_size, lambda_, max_iter, eps_threshold, rho)
 
-def copy_ADMM(src_admm):
 
+def copy_ADMM(src_admm):
     x = ADMM(copy.deepcopy(src_admm.H), src_admm.mu, src_admm.lambda_, src_admm.max_iter, src_admm.eps, src_admm.rho)
     x.s = src_admm.s.clone().detach()
-    x.s.requires_grad=False
+    x.s.requires_grad = False
     x.set_model_visualization_params()
     return x
-
-
-# ADMM_model = ADMM(H, step_size, lambda_, max_iter, eps_threshold, rho)
-#
-# s_ADMM, errors = ADMM_model(x)
-# plt.figure()
-# plt.subplot(2, 1, 1)
-# plt.plot(errors, label = 'Convergence of ADMM' )
-# plt.xlabel('iteration', fontsize=10)
-# plt.ylabel('squared error', fontsize=10)
-# plt.legend()
-# plt.subplot (2, 1, 2)
-# plt.plot(s[0], label = 'sparse signal', color='k')
-# plt.plot ( s_ADMM ,  '.--' , label ='ADMM', color='r',linewidth=1)
-# plt.xlabel('Index', fontsize=10)
-# plt.ylabel('Value', fontsize=10)
-# plt.legend( )
-# plt.show()

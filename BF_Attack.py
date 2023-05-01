@@ -28,7 +28,7 @@ sns.set()
 import torch
 import torch.nn as nn
 
-DATASET_PATH = "../../data"
+DATASET_PATH = "../Engineering Project/data"
 
 # Fetching the device that will be used throughout this notebook
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")

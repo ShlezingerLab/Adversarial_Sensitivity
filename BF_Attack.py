@@ -1,77 +1,52 @@
-#### Load Modules ####
-
-import os
-import json
-import math
-import time
 import numpy as np
-import scipy.linalg
-
-import torch.nn.functional as F
-import loss_landscapes
-from matplotlib import pyplot as plt
-
-## Imports for plotting
+import torch
 import matplotlib.pyplot as plt
-from IPython.display import set_matplotlib_formats
-
-set_matplotlib_formats('svg', 'pdf')
-from matplotlib.colors import to_rgb
 import matplotlib
-
-matplotlib.rcParams['lines.linewidth'] = 2.0
+from IPython.display import set_matplotlib_formats
 import seaborn as sns
 
+from utills import save_fig
+
+set_matplotlib_formats('svg', 'pdf')
+matplotlib.rcParams['lines.linewidth'] = 2.0
+
 sns.set()
-
-## PyTorch
-import torch
-import torch.nn as nn
-
-DATASET_PATH = "../Engineering Project/data"
 
 # Fetching the device that will be used throughout this notebook
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
 
 
-def BIM(model, x, radius=0.1, alpha=0.001, steps=8, pixelclip=(-2.6, 2.6)):
-    x = x.clone().to(device)
+def beamforming_BIM(model, h, radius=0.1, alpha=1, steps=30):
+    h = h.clone().to(device)
 
-    ### Change or move code from here on ###
-    original_x = x.data
-    adv_h = x.clone().detach()
+    original_x = h.data
+    adv_h = h.clone().detach()
 
     for step in range(steps):
-        print("BIM Step {0}".format(step))
+        # print("BIM Step {0}".format(step))
         adv_h.requires_grad = True
+        model.zero_grad()
         _, wa_hat, wd_hat = model(h=adv_h)
 
-        model.zero_grad()  # reminder why this one is necessary here?
-
-        # Calculate loss
-        # if targeted==True the labels are the targets labels else they are just the ground truth labels
-
         R = model.objec(h=original_x, wa=wa_hat, wd=wd_hat)
+        # print("RATE: {0}".format(R.norm(2).item()))
 
-        # cost.backward(retain_graph=True)
-        grad = torch.autograd.grad(R.mean(), adv_h)[0]
-        # grad = torch.autograd.grad(R, adv_h)[0]
+        grad = torch.autograd.grad(R, adv_h)[0]
 
         # Grad is calculated
-        delta = alpha * grad.sign()
+        delta = alpha * grad
+
         # Stop following gradient changes
         adv_h = adv_h.clone().detach()
 
         adv_h = adv_h - delta
-        # print("diff: {}".format((adv_h - original_x).norm(2)))
-        # Clip the change between the adverserial images and the original images to an epsilon range
-        eta = torch.clamp(adv_h - original_x, min=-radius, max=radius)
 
-        # detach to start from a fresh start images object (avoiding gradient tracking)
-        # adv_x = torch.clamp(original_x + eta, min=pixelclip[0], max=pixelclip[1])
-        adv_h = original_x + eta
-    # ## Don't change this code:
+        # Clip the change between the adverserial images and the original images to an epsilon range
+        real_eta = torch.clamp((adv_h - original_x).real, min=-radius, max=radius)
+        imag_eta = torch.clamp((adv_h - original_x).imag, min=-radius, max=radius)
+
+        adv_h = original_x + torch.complex(real_eta, imag_eta)
 
     return adv_h, delta, wa_hat, wd_hat
 
@@ -80,54 +55,44 @@ def BIM(model, x, radius=0.1, alpha=0.001, steps=8, pixelclip=(-2.6, 2.6)):
 
 from beam_forming import H_test, N, L, B, num_of_iter_pga, ProjGA, test_size
 
-# ---- Classical PGA ----
-# parameters defining
-
 mu = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga, requires_grad=False)
-rates = []
-# Object defining
+
 classical_model = ProjGA(mu)
 sum_rate_class, wa, wd = classical_model.forward(H_test, N, L, B, num_of_iter_pga)
 
 wa_original, wd_original, original_h = wa.detach(), wd.detach(), H_test.detach()
 print("BeamForming Rate (Un-attacked): {0}".format(
-    classical_model.objec(h=original_h, wa=wa_original, wd=wd_original)[-1].mean()))
-# print("BeamForming convergence: sum rate class: {0}".format(sum_rate_class[-1].mean().item()))
-attack_radius = np.linspace(0.01 * 0.5, 2 * 10 * 0.01 * 2, 10)
+    classical_model.objec(h=original_h, wa=wa_original, wd=wd_original).mean().norm(2).item()))
+
+# Noise scalar which yields 3.6 Rate
+noise_scalar = 0.81030
+print("BeamForming Rate (attacked via adding traditional noise with ratio) "
+      "rate: {0} ratio: {1}".format(classical_model.objec(h=noise_scalar * original_h, wa=wa_original,
+                                                          wd=wd_original).mean().item(),noise_scalar ))
+
 min_dist = []
-for r in attack_radius:
-    print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
+attack_radius = np.linspace(0.002, 0.2, 20)
+mu = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga, requires_grad=False)
+rates = np.zeros(((H_test.shape[1]), len(attack_radius)))
 
-    mu = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga, requires_grad=False)
-    bf_model = ProjGA(mu)
+for h_idx in range(H_test.shape[1]):
 
-    adv_h, delta, wa_hat, wd_hat = BIM(bf_model, original_h, radius=r, alpha=0.01*0.5)
+    original_h = H_test[:, h_idx, :, :].reshape((16, 1, 4, 12)).detach()
+    for r_idx, r in enumerate(attack_radius):
+        bf_model = ProjGA(mu)
+        # print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
+        adv_h, _, wa_hat, wd_hat = beamforming_BIM(bf_model, original_h, radius=r)
+        adv_h = adv_h.detach()
+        # print("Norm2(H_gt-H_adv): {0}".format((original_h - adv_h).norm(2)))
+        attacked_rate = classical_model.objec(h=original_h, wa=wa_hat, wd=wd_hat).norm(2).item()
+        # print("BeamForming Rate (attacked): {0}".format(attacked_rate))
 
-    adv_h = adv_h.detach()
-    # plot_x_s(adv_x.numpy(), h_original.numpy(), "attacked observation", "true observation")
+        rates[h_idx, r_idx] = attacked_rate
 
-    # sum_rate_class, wa_attacked, wd_attacked = bf_model.forward(h=adv_h)
-    # print("Attacked-BeamForming convergence: Rate: {0}".format(len(sum_rate_class)))
-    print("Norm2(H_gt-H_adv): {0}".format((original_h - adv_h).norm(2)))
-    attacked_rate = classical_model.objec(h=original_h, wa=wa_hat, wd=wd_hat).mean().item()
-    print("BeamForming Rate (attacked): {0}".format(attacked_rate))
-    rates.append(attacked_rate)
-
-    # # ploting the results
-    # plt.figure()
-    # y = [r.detach().numpy() for r in (sum(sum_rate_class)/test_size)]
-    # x = np.array(list(range(num_of_iter_pga))) +1
-    # plt.plot(x, y, 'o')
-    # plt.title(f'The Average Achievable Sum-Rate of the Test Set \n in Each Iteration of the Classical PGA')
-    # plt.xlabel('Number of Iteration')
-    # plt.ylabel('Achievable Rate')
-    # plt.grid()
-    # plt.show()
-
-    # min_dist.append((wd_original - wa_attacked).norm(2).item())
+np.save('rates_avg.npy', rates)
 
 plt.figure()
-plt.plot(attack_radius, rates)
-plt.xlabel('attack radius')
-plt.ylabel('Rate')
+plt.plot(attack_radius, rates.mean(axis=0))
+plt.xlabel('$\epsilon$')
+plt.ylabel('${\|\|R\|\|}_{2}$')
 plt.show()

@@ -6,15 +6,14 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
+B = 16  # Num of frequency bands
+# B = 8      # Num of frequency bands
 
-B = 16      # Num of frequency bands
-#B = 8      # Num of frequency bands
-
-N = 4      # Num of users
+N = 4  # Num of users
 # N = 6      # Num of users
 
-L = 10      # RF chains
-M = 12     # Tx antennas
+L = 10  # RF chains
+M = 12  # Tx antennas
 
 # ---- generating data set
 train_size = 1000
@@ -28,11 +27,12 @@ H_valid = torch.randn(B, valid_size, N, M)
 # test data set
 # H_test = torch.randn(B, test_size, N, M)
 H_test = torch.load(r'matrices/H_for_Elad_16x100x4x12.pt')
-# H_test = H_test[:,0,:,:].reshape((16,1,4,12))
+
 # ---- Classical PGA ----
 # parameters defining
 num_of_iter_pga = 30
-mu = torch.tensor([[50 * 1e-2] * (B+1)] * num_of_iter_pga, requires_grad=False)
+mu = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga, requires_grad=False)
+
 
 class ProjGA(nn.Module):
 
@@ -58,9 +58,10 @@ class ProjGA(nn.Module):
         wa = vh[:, :, :l1]
         wa = torch.cat(((wa[None, :, :, :],) * b), 0)
         # randomizing Wd,b
-        wd = torch.randn(b, len(h[0]), l1, n)
+        wd = torch.randn(b, len(h[0]), l1, n, dtype=torch.complex128)
         # projecting Wd,b onto the constraint
-        wd = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa @ wd, ord='fro')**2)))).reshape(len(h[0]), 1, 1) * wd
+        wd = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa @ wd, ord='fro') ** 2)))).reshape(len(h[0]), 1,
+                                                                                                    1) * wd
 
         # defining an array which holds the values of the rate of each iteration
         obj = torch.zeros(num_of_iter, len(h[0]))
@@ -71,14 +72,14 @@ class ProjGA(nn.Module):
             # gradient ascent
             wa_t = wa + self.hyp[x][0] * self.grad_wa(h, wa, wd, n, b)
             # projection
-            wa = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa_t @ wd, ord='fro') ** 2)))).reshape(len(h[0]), 1,
-                                                                                                          1) * wa_t
+            wa = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa_t @ wd, ord='fro') ** 2)))).reshape(len(h[0]), 1,1) * wa_t
 
             # ---------- Wd,b ---------------
             wd_t = wd.clone().detach()
             for i in range(b):
                 # gradient ascent
-                wd_t[i] = wd[i].clone().detach() + self.hyp[x][i + 1] * self.grad_wd(h[i], wa[0], wd[i].clone().detach(), n, b)
+                wd_t[i] = wd[i].clone().detach() + self.hyp[x][i + 1] * self.grad_wd(h[i], wa[0],
+                                                                                     wd[i].clone().detach(), n, b)
                 # projection
                 wd = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa @ wd_t, ord='fro') ** 2)))).reshape(len(h[0]),
                                                                                                               1,
@@ -92,8 +93,8 @@ class ProjGA(nn.Module):
     def objec(self, h, wa, wd, n=N, b=B):
         # calculates the rate for a given channel (h) and precoders (wa, wd)
         return sum(torch.log((torch.eye(n).reshape((1, 1, n, n)) +
-                       h @ wa @ wd @ torch.transpose(wd, 2, 3).conj() @
-                       torch.transpose(wa, 2, 3).conj() @ torch.transpose(h, 2, 3).conj()).det())) / b
+                              h @ wa @ wd @ torch.transpose(wd, 2, 3).conj() @
+                              torch.transpose(wa, 2, 3).conj() @ torch.transpose(h, 2, 3).conj()).det())) / b
 
     def grad_wa(self, h, wa, wd, n, b):
         # calculates the gradient with respect to wa for a given channel (h) and precoders (wa, wd)
@@ -102,16 +103,17 @@ class ProjGA(nn.Module):
                                                                              torch.transpose(wd, 2, 3).conj() @
                                                                              torch.transpose(wa, 2, 3).conj() @
                                                                              torch.transpose(h, 2, 3).conj()), 2, 3)
-                                                                             @ h.conj() @ wa.conj() @ wd.conj() @
-                                                                             torch.transpose(wd, 2, 3)) / b
+                 @ h.conj() @ wa.conj() @ wd.conj() @
+                 torch.transpose(wd, 2, 3)) / b
         return torch.cat(((f2[None, :, :, :],) * b), 0)
 
     def grad_wd(self, h, wa, wd, n, b):
         # calculates the gradient with respect to wd,b for a given channel (h) and precoders (wa, wd)
         return (torch.transpose(wa, 1, 2) @ torch.transpose(h, 1, 2) @
                 torch.transpose(torch.linalg.inv(torch.eye(n).reshape((1, n, n)).repeat(len(h), 1, 1) +
-                h @ wa @ wd @ torch.transpose(wd, 1, 2).conj() @
-                torch.transpose(wa, 1, 2).conj() @ torch.transpose(h, 1, 2).conj()), 1, 2) @
+                                                 h @ wa @ wd @ torch.transpose(wd, 1, 2).conj() @
+                                                 torch.transpose(wa, 1, 2).conj() @ torch.transpose(h, 1, 2).conj()), 1,
+                                2) @
                 h.conj() @ wa.conj() @ wd.conj()) / b
 
 
@@ -124,7 +126,6 @@ def sum_loss(wa, wd, h, n, b, batch_size):
     ra = sum(s) / b
     loss = sum(ra) / batch_size
     return -loss
-
 
 # ---- MAIN ----
 # ---- the systems features

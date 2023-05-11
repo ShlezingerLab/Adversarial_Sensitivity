@@ -14,7 +14,8 @@ import matplotlib
 
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
-FIGURES_PATH = r'/matrices/'
+FIGURES_PATH = r'graphs/'
+MATRICES_PATH = r'matrices/'
 
 # https://www.youtube.com/watch?v=m73Fy_rHV0A&ab_channel=ConstantineCaramanis
 # dimensions of the sparse signal, measurement and sparsity level
@@ -25,7 +26,7 @@ np.random.seed(0)
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
 
-r_step = 40
+r_step = 49
 sig_amount = 100
 loss3d_res_steps = 800
 
@@ -89,18 +90,23 @@ def BIM(model, x, s_gt, eps=0.1, alpha=0.01, steps=5):
     return adv_x, delta  # grad is the gradient (perturbation)
 
 
-def plot_1d_surface(gt_line, adv_line):
+def plot_1d_surface(gt_line, adv_line, fname):
     plt.figure()
     plt.plot(np.arange(len(gt_line)), gt_line)
     plt.plot(np.arange(len(adv_line)), adv_line)
-    plt.legend(['Ground truth loss surface', 'Adversarial loss surface'])
+    plt.xlabel(r'$u_1$')
+    plt.legend([r'Loss $\mathcal{L}_{op}$', r'Loss $\mathcal{L}_{adv}$'])
+    save_fig(fname)
     plt.show()
 
 
-def plot_2d_surface(z_gt, z_adv):
+def plot_2d_surface(z_gt, z_adv, fname):
     plt.figure()
     cs = plt.contour(z_gt)
     plt.clabel(cs, inline=1, fontsize=10)
+    plt.colorbar(cs)
+    cs.set_xlabel(r'$u_2$')
+    cs.set_ylabel(r'$u_1$')
     # plt.style.use('plot_style.txt')
     # plt.title("Loss surface of L_truth(s) = 0.5*||x-Hs|| + rho*||s| s.t (rho=0.01), epsilon=0.1")
     plt.savefig("ISTA_2D_LOSS_GT.pdf", bbox_inches='tight')
@@ -109,7 +115,10 @@ def plot_2d_surface(z_gt, z_adv):
     cs = plt.contour(z_adv)
     plt.clabel(cs, inline=1, fontsize=10)
     plt.colorbar(cs)
+    cs.set_xlabel(r'$u_2$')
+    cs.set_ylabel(r'$u_1$')
     # plt.style.use('plot_style.txt')
+    save_fig(fname)
     plt.show()
 
 
@@ -143,25 +152,26 @@ def plot_3d_surface(z_adv, z_gt, steps, fname):
     plt.show()
 
 
-def plot_conv_rec_graph(signal_a, signal_b, errors_a, errors_b,
+def plot_conv_rec_graph(signal_a, signal_b,s_gt, errors_a, errors_b,
                         fname="convergence_ADMM.pdf"):
-    plt.style.use('default')
     plt.figure(figsize=(8, 8))
 
     plt.subplot(2, 1, 1)
-    plt.plot(errors_a, label=r'${s}_{\rm adv}^{\star} convergence$')
-    plt.plot(errors_b, label=r'${s}^{\star}$ convergence')
-    plt.xlabel('iteration', fontsize=10)
-    plt.ylabel('squared error', fontsize=10)
+    # plt.grid(color='gray')
+    plt.plot(errors_a, label=r'${s}_{\rm adv}^{\star}$ convergence', linewidth=2)
+    plt.plot(errors_b, '--', label=r'${s}^{\star}$ convergence', linewidth=2)
+    plt.grid()
+    plt.xlabel('Iteration', fontsize=13)
+    plt.ylabel('$\mathcal{L}$', fontsize=13)
     plt.legend()
     # plt.style.use('plot_style.txt')
-
     plt.subplot(2, 1, 2)
-    plt.plot(signal_a, label=r'${s}_{\rm adv}^{\star}$', color='k')
-    plt.plot(signal_b, label=r'${s}^{\star}$', color='r', linewidth=1)
-    plt.plot(s[0], label="$s$", color='g', linewidth=2)
-    plt.xlabel('Index', fontsize=10)
-    plt.ylabel('Value', fontsize=10)
+    plt.grid()
+    plt.plot(signal_a, '--*', label=r'${s}_{\rm adv}^{\star}$', color='k', linewidth=1)
+    plt.plot(signal_b, '-s', label=r'${s}^{\star}$', color='r', linewidth=1)
+    plt.plot(s_gt[0], '.-', label="$s$", color='g', linewidth=1)
+    plt.xlabel('Index', fontsize=13)
+    plt.ylabel('Value', fontsize=13)
     plt.legend()
     save_fig(fname)
     plt.show()
@@ -169,7 +179,7 @@ def plot_conv_rec_graph(signal_a, signal_b, errors_a, errors_b,
 
 def plot_norm_graph(radius_vec, min_dist, fname):
     plt.figure()
-    # plt.style.use('plot_style.txt')
+    plt.style.use('plot_style.txt')
     plt.plot(radius_vec, min_dist)
     plt.xlabel(r'$\epsilon$')
     plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
@@ -178,18 +188,26 @@ def plot_norm_graph(radius_vec, min_dist, fname):
 
 
 def plot_observations(adv_x, x, fname):
+    plt.style.use('default')
     plt.figure()
-    # plt.style.use('plot_style.txt')
+
     plt.subplot(2, 1, 1)
+    plt.grid()
     plt.xlabel('Index', fontsize=10)
     plt.ylabel('Value', fontsize=10)
-    plt.plot(adv_x.numpy(), label=r"$x+\delta$", color='k')
-    plt.subplot(2, 1, 2)
-    plt.plot(x.numpy(), label=r"$x$", color='r', linewidth=1)
-    # plt.style.use('default')
+    plt.plot(adv_x.numpy(), color='k')
+    plt.legend([r"$x + \delta $"])
+
+    axs1 = plt.subplot(2, 1, 2)
+    plt.plot(x.numpy(), color='r')
+    plt.grid()
+    plt.legend([r"$x$"])
+    new_pos = axs1.get_position()
+    new_pos.y0 -= 0.08 * new_pos.y0
+    new_pos.y1 -= 0.08 * new_pos.y1
+    axs1.set_position(pos=new_pos)
     plt.xlabel('Index', fontsize=10)
     plt.ylabel('Value', fontsize=10)
-    plt.legend()
     save_fig(fname)
     plt.show()
 
@@ -199,6 +217,22 @@ def save_fig(fname):
 
 
 if __name__ == '__main__':
+    radius_vec = np.linspace(eps_min, eps_max, r_step)
+    ISTA_min_distances = np.load(
+        '/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/stack/version1/matrices/ISTA_total_norm.npy')
+    ADMM_min_distances = np.load(
+        '/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/stack/version1/matrices/ADMM_total_norm.npy')
+    plt.figure()
+    plt.style.use('plot_style.txt')
+    # plt.style.use('plot_style.txt')
+    plt.plot(radius_vec, ADMM_min_distances.mean(axis=0), '.-')
+    plt.plot(radius_vec, ISTA_min_distances.mean(axis=0))
+    plt.xlabel(r'$\epsilon$')
+    plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
+    plt.legend(['ADMM', 'ISTA'])
+    save_fig('norm2_combined.pdf')
+    plt.show()
+
     x, s = generate_signal()
     plt.figure(figsize=(8, 8))
     plt.subplot(2, 1, 1)

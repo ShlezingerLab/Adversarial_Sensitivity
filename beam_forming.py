@@ -72,7 +72,8 @@ class ProjGA(nn.Module):
             # gradient ascent
             wa_t = wa + self.hyp[x][0] * self.grad_wa(h, wa, wd, n, b)
             # projection
-            wa = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa_t @ wd, ord='fro') ** 2)))).reshape(len(h[0]), 1,1) * wa_t
+            wa = (torch.sqrt(n * b / (sum(torch.linalg.matrix_norm(wa_t @ wd, ord='fro') ** 2)))).reshape(len(h[0]), 1,
+                                                                                                          1) * wa_t
 
             # ---------- Wd,b ---------------
             wd_t = wd.clone().detach()
@@ -127,84 +128,86 @@ def sum_loss(wa, wd, h, n, b, batch_size):
     loss = sum(ra) / batch_size
     return -loss
 
+
 # ---- MAIN ----
 # ---- the systems features
+if __name__ == '__main__':
 
-#
-# # Object defining
-# classical_model = ProjGA(mu)
-#
-# # executing classical PGA on the test set
-# sum_rate_class, __, __ = classical_model.forward(H_test, N, L, B, num_of_iter_pga)
-#
-# # ploting the results
-# plt.figure()
-# y = [r.detach().numpy() for r in (sum(sum_rate_class)/test_size)]
-# x = np.array(list(range(num_of_iter_pga))) +1
-# plt.plot(x, y, 'o')
-# plt.title(f'The Average Achievable Sum-Rate of the Test Set \n in Each Iteration of the Classical PGA')
-# plt.xlabel('Number of Iteration')
-# plt.ylabel('Achievable Rate')
-# plt.grid()
-# plt.show()
-#
-# # ---- Unfolded PGA ----
-# # parameters defining
-# num_of_iter_pga_unf = 5
-# mu_unf = torch.tensor([[50 * 1e-2] * (B+1)] * num_of_iter_pga_unf, requires_grad=True)
-#
-# # Object defining
-# unfolded_model = ProjGA(mu_unf)
-#
-# # training procedure
-# optimizer = torch.optim.Adam(unfolded_model.parameters(), lr=0.4)
-#
-# epochs = 110
-# batch_size = 100  # batch size
-# train_losses, valid_losses = [], []
-#
-# for i in range(epochs):
-#     H_shuffeld = torch.transpose(H_train, 0, 1)[np.random.permutation(len(H_train[1]))]
-#     for b in range(0, len(H_train), batch_size):
-#         H = torch.transpose(H_shuffeld[b:b+batch_size], 0, 1)
-#         __, wa, wd = unfolded_model.forward(H, N, L, B, num_of_iter_pga_unf)
-#         loss = sum_loss(wa, wd, H, N, B, batch_size)
-#
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#
-#     # train loss
-#     __, wa, wd = unfolded_model.forward(H_train, N, L, B, num_of_iter_pga_unf)
-#     train_losses.append(sum_loss(wa, wd, H_train, N, B, train_size))
-#
-#     # validation loss
-#     __, wa, wd = unfolded_model.forward(H_valid, N, L, B, num_of_iter_pga_unf)
-#     valid_losses.append(sum_loss(wa, wd, H_valid, N, B, valid_size))
-#
-# # plotting learning curve
-# y_t = [r.detach().numpy() for r in train_losses]
-# x_t = np.array(list(range(len(train_losses))))
-# y_v = [r.detach().numpy() for r in valid_losses]
-# x_v = np.array(list(range(len(valid_losses))))
-# plt.figure()
-# plt.plot(x_t, y_t, 'o', label='Train')
-# plt.plot(x_v, y_v, '*', label='Valid')
-# plt.grid()
-# plt.title(f'Loss Curve, Num Epochs = {epochs}, Batch Size = {batch_size} \n Num of Iterations of PGA = {num_of_iter_pga_unf}')
-# plt.xlabel('Epoch')
-# plt.legend(loc='best')
-# plt.show()
-#
-# # executing unfolded PGA on the test set
-# sum_rate_unf, __, __ = unfolded_model.forward(H_test, N, L, B, num_of_iter_pga_unf)
-# # ploting the results
-# plt.figure()
-# y = [r.detach().numpy() for r in (sum(sum_rate_unf)/test_size)]
-# x = np.array(list(range(num_of_iter_pga_unf))) +1
-# plt.plot(x, y, 'o')
-# plt.title(f'The Average Achievable Sum-Rate of the Test Set \n in Each Iteration of the unfolded PGA')
-# plt.xlabel('Number of Iteration')
-# plt.ylabel('Achievable Rate')
-# plt.grid()
-# plt.show()
+    # Object defining
+    classical_model = ProjGA(mu)
+
+    # executing classical PGA on the test set
+    sum_rate_class, __, __ = classical_model.forward(H_test, N, L, B, num_of_iter_pga)
+
+    # ploting the results
+    plt.figure()
+    y = [r.detach().numpy() for r in (sum(sum_rate_class) / test_size)]
+    x = np.array(list(range(num_of_iter_pga))) + 1
+    plt.plot(x, y, 'o')
+    plt.title(f'The Average Achievable Sum-Rate of the Test Set \n in Each Iteration of the Classical PGA')
+    plt.xlabel('Number of Iteration')
+    plt.ylabel('Achievable Rate')
+    plt.grid()
+    plt.show()
+
+    # ---- Unfolded PGA ----
+    # parameters defining
+    num_of_iter_pga_unf = 5
+    mu_unf = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga_unf, requires_grad=True)
+
+    # Object defining
+    unfolded_model = ProjGA(mu_unf)
+
+    # training procedure
+    optimizer = torch.optim.Adam(unfolded_model.parameters(), lr=0.4)
+
+    epochs = 110
+    batch_size = 100  # batch size
+    train_losses, valid_losses = [], []
+
+    for i in range(epochs):
+        H_shuffeld = torch.transpose(H_train, 0, 1)[np.random.permutation(len(H_train[1]))]
+        for b in range(0, len(H_train), batch_size):
+            H = torch.transpose(H_shuffeld[b:b + batch_size], 0, 1)
+            __, wa, wd = unfolded_model.forward(H, N, L, B, num_of_iter_pga_unf)
+            loss = sum_loss(wa, wd, H, N, B, batch_size)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        # train loss
+        __, wa, wd = unfolded_model.forward(H_train, N, L, B, num_of_iter_pga_unf)
+        train_losses.append(sum_loss(wa, wd, H_train, N, B, train_size))
+
+        # validation loss
+        __, wa, wd = unfolded_model.forward(H_valid, N, L, B, num_of_iter_pga_unf)
+        valid_losses.append(sum_loss(wa, wd, H_valid, N, B, valid_size))
+
+    # plotting learning curve
+    y_t = [r.detach().numpy() for r in train_losses]
+    x_t = np.array(list(range(len(train_losses))))
+    y_v = [r.detach().numpy() for r in valid_losses]
+    x_v = np.array(list(range(len(valid_losses))))
+    plt.figure()
+    plt.plot(x_t, y_t, 'o', label='Train')
+    plt.plot(x_v, y_v, '*', label='Valid')
+    plt.grid()
+    plt.title(
+        f'Loss Curve, Num Epochs = {epochs}, Batch Size = {batch_size} \n Num of Iterations of PGA = {num_of_iter_pga_unf}')
+    plt.xlabel('Epoch')
+    plt.legend(loc='best')
+    plt.show()
+
+    # executing unfolded PGA on the test set
+    sum_rate_unf, __, __ = unfolded_model.forward(H_test, N, L, B, num_of_iter_pga_unf)
+    # ploting the results
+    plt.figure()
+    y = [r.detach().numpy() for r in (sum(sum_rate_unf) / test_size)]
+    x = np.array(list(range(num_of_iter_pga_unf))) + 1
+    plt.plot(x, y, 'o')
+    plt.title(f'The Average Achievable Sum-Rate of the Test Set \n in Each Iteration of the unfolded PGA')
+    plt.xlabel('Number of Iteration')
+    plt.ylabel('Achievable Rate')
+    plt.grid()
+    plt.show()

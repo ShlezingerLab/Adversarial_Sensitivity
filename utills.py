@@ -1,24 +1,21 @@
+__author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
+
+import os
+
 import numpy as np
 import torch
 import torch.nn as nn
-import os
 
 from scipy.linalg import orth
-
+import matplotlib
 import matplotlib.pyplot as plt
 from IPython.display import set_matplotlib_formats
 
 set_matplotlib_formats('svg', 'pdf')
-from matplotlib.colors import to_rgb
-import matplotlib
-
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
 FIGURES_PATH = r'graphs/'
 MATRICES_PATH = r'matrices/'
-
-# https://www.youtube.com/watch?v=m73Fy_rHV0A&ab_channel=ConstantineCaramanis
-# dimensions of the sparse signal, measurement and sparsity level
 
 np.random.seed(0)
 
@@ -26,6 +23,7 @@ np.random.seed(0)
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
 
+# CONSTANTS
 r_step = 49
 sig_amount = 100
 loss3d_res_steps = 800
@@ -40,7 +38,7 @@ H = torch.from_numpy(H).float()
 
 
 def generate_signal():
-    """Generate sparse signal s and it's observation x"""
+    """Generate sparse signal s and it's observation x, x=Hs+w s.t w~N(0,0.001) """
     s = np.zeros((1, m))
     index_k = np.random.choice(m, k, replace=False)
     s[:, index_k] = 0.5 * np.random.randn(k, 1).reshape([1, k])
@@ -53,6 +51,16 @@ def generate_signal():
 
 
 def BIM(model, x, s_gt, eps=0.1, alpha=0.01, steps=5):
+    """
+    Performing BIM adversarial attack for sparse-recovery casestudy.
+    :param model: ADMM/ISTA object - The attacked model
+    :param x: torch vector x - x=Hs+w s.t w~N(0,0.001)
+    :param s_gt: torch vector s - s_gt=s^*
+    :param eps: eps>0 - attack radius
+    :param alpha: BIM step-size
+    :param steps: how many BIM iterations to perform
+    :return: adversarial x signal and the pertubation which was applied.
+    """
     x = x.clone().to(device)
     s_gt = s_gt.clone().to(device)
 
@@ -218,13 +226,11 @@ def save_fig(fname):
 
 if __name__ == '__main__':
     radius_vec = np.linspace(eps_min, eps_max, r_step)
-    ISTA_min_distances = np.load(
-        '/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/stack/version1/matrices/ISTA_total_norm.npy')
-    ADMM_min_distances = np.load(
-        '/Users/elad.sofer/src/ADVERSARIAL_SENSITIVTY/stack/version1/matrices/ADMM_total_norm.npy')
+    ISTA_min_distances = np.load('stack/version1/matrices/ISTA_total_norm.npy')
+    ADMM_min_distances = np.load('stack/version1/matrices/ADMM_total_norm.npy')
     plt.figure()
     plt.style.use('plot_style.txt')
-    # plt.style.use('plot_style.txt')
+
     plt.plot(radius_vec, ADMM_min_distances.mean(axis=0), '.-')
     plt.plot(radius_vec, ISTA_min_distances.mean(axis=0))
     plt.xlabel(r'$\epsilon$')

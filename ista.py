@@ -1,5 +1,6 @@
+__author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
+
 import numpy as np
-import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
 
@@ -10,7 +11,6 @@ import math
 
 from loss_landscapes.model_interface.model_wrapper import ModelWrapper, wrap_model
 from loss_landscapes.model_interface.model_parameters import rand_u_like, orthogonal_to
-from loss_landscapes.metrics.metric import Metric
 
 from utills import m, H
 

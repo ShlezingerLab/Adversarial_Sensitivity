@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ista', action='store_true')
     parser.add_argument('-a', '--admm', action='store_true')
     args = parser.parse_args()
+
     if args.beamforming:
         beamforming_attack.execute()
     if args.ista:

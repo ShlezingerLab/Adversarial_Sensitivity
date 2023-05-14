@@ -22,12 +22,15 @@ np.random.seed(0)
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
 
-# CONSTANTS
+# Attack configuration
 r_step = 40
 sig_amount = 100
+eps_min, eps_max = 0.01 * 0.5, 0.05
+
+# Loss-surface visualization resolution
 loss3d_res_steps = 800
 
-eps_min, eps_max = 0.01 * 0.5, 0.05
+# Signal generation configuration
 m, n, k = 1000, 256, 5
 Psi = np.eye(m)
 Phi = np.random.randn(n, m)
@@ -75,7 +78,6 @@ def BIM(model, x, s_gt, eps=0.1, alpha=0.01, steps=5):
         model.zero_grad()
 
         # Calculate loss
-        # if targeted==True the labels are the targets labels else they are just the ground truth labels
         cost = loss(s_gt, s_hat)
 
         # cost.backward(retain_graph=True)

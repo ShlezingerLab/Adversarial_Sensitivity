@@ -7,7 +7,8 @@ from loss_landscapes.model_interface.model_parameters import rand_u_like
 
 class LandscapeWrapper(ABC):
     """
-    This class overrides part of the loss_landscapes API (`https://arxiv.org/abs/1712.09913v3`) for this paper purpose.
+    This abstract class overrides part of the loss_landscapes API (`https://arxiv.org/abs/1712.09913v3`)
+     for our paper purposes.
     """
     def get_grid_vectors(self, model, adv_model, deepcopy_model=True, steps=40, distance=1):
         # Model parameters

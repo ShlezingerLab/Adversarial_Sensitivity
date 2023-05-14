@@ -91,10 +91,11 @@ class ISTA(nn.Module, LandscapeWrapper):
 def execute():
     """
     A function which generates c signals (via utills modoule), each signal is of the form x_i = Hs+w s.t w~N(0,0.001)
-    for each signal, the function performs an ISTA reconstruction to retrieve s^*. furthermore, for each signal x, we perform
+    for each signal, the function performs an ISTA reconstruction to retrieve s^*. Furthermore, for each signal x, we perform
     BIM adversarial attack with different epsilon, aggregate the norm ||s^*-s^*_adv||_{2} and present the results.
     The function also plots the Loss surface of x_{n-1} in various forms (3d,2d,1d) and all related graphs.
-    :return:
+    To extract the full norm graph, one should execute ista attack, save dist_total parameter, and perform the same for
+    admm, than run utills.py __main__
     """
     signals = []
     dist_total = np.zeros((sig_amount, r_step))
@@ -111,25 +112,25 @@ def execute():
         print("#### ISTA signal {0} convergence: iterations: {1} ####".format(sig_idx, len(err_gt)))
         s_gt = s_gt.detach()
 
-        for r_idx, r in enumerate(radius_vec):
+        for e_idx, attack_eps in enumerate(radius_vec):
             # print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
             ISTA_adv_model = ISTA.create_ISTA()
-            adv_x, delta = BIM(ISTA_adv_model, x_original, s_original, eps=r)
+            adv_x, delta = BIM(ISTA_adv_model, x_original, s_original, eps=attack_eps)
             adv_x = adv_x.detach()
             s_attacked, err_attacked = ISTA_adv_model(adv_x)
             # print("Attacked-ISTA convergence: iterations: {0}".format(len(err_attacked)))
 
-            dist_total[sig_idx, r_idx] = (s_gt - s_attacked).norm(2).item()
+            dist_total[sig_idx, e_idx] = (s_gt - s_attacked).norm(2).item()
 
     ##########################################################
     # np.save('data/stack/version1/matrices/ISTA_total_norm.npy', dist_total)
+
     plot_norm_graph(radius_vec, dist_total.mean(axis=0), fname='ISTA_norm2.pdf')
     x = x_original.detach()
-    plot_observations(adv_x, x, fname="ISTA_observation.pdf")
 
+    plot_observations(adv_x, x, fname="ISTA_observation.pdf")
     plot_conv_rec_graph(s_attacked.detach().numpy(), s_gt.detach().numpy(), s_original,
-                        err_attacked, err_gt,
-                        fname='ISTA_convergence.pdf')
+                        err_attacked, err_gt, fname='ISTA_convergence.pdf')
 
     # Presenting last iteration signal loss surfaces for r=max_eps
     ISTA_adv_model.set_model_visualization_params()

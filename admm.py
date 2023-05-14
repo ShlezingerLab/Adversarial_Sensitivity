@@ -13,6 +13,8 @@ from utills import generate_signal, plot_conv_rec_graph, BIM, plot_3d_surface, \
 
 from utills import sig_amount, r_step, eps_min, eps_max, loss3d_res_steps
 
+np.random.seed(0)
+
 # ADMM configuration
 step_size = 0.00005
 max_iter = 10000
@@ -51,7 +53,11 @@ class ADMM(nn.Module, LandscapeWrapper):
         return torch.mul(torch.sign(x), torch.max(torch.abs(x) - beta, torch.zeros((m, 1))))
 
     def forward(self, x):
-
+        """
+        Convergence process of the ADMM algorithm.
+        :param x: observation x, while x=Hs+w
+        :return: s^*
+        """
         recovery_errors = []
         for k in range(self.max_iter):
             s_prev, v_prev, u_prev = self.s, self.v, self.u
@@ -74,13 +80,27 @@ class ADMM(nn.Module, LandscapeWrapper):
         return self.s, recovery_errors
 
     def set_model_visualization_params(self):
+        """
+        Initialize S as a NN parameter to support loss-landscapes API visualization.
+        """
         self.model_params = nn.Parameter(self.s.clone().detach(), requires_grad=False)
 
     def loss_func(self, s, x_sig):
+        """
+        Calculate the Lasso loss function for a given x, s signals.
+        :param s: s, sparse signal
+        :param x_sig: x = Hs+w s.t w~N(0,0.001)
+        :return: The Lasso loss for a given x, s.
+        """
         return 0.5 * torch.sum((torch.matmul(self.H, s) - x_sig) ** 2).item() + self.rho * s.norm(p=1).item()
 
     @staticmethod
     def copy(src_admm):
+        """
+        Copy an ADMM object.
+        :param src_admm: the source object to copy from.
+        :return: ADMM object, a copy of the model
+        """
         x = ADMM(copy.deepcopy(src_admm.H), src_admm.mu, src_admm.lambda_, src_admm.max_iter, src_admm.eps,
                  src_admm.rho)
         x.s = src_admm.s.clone().detach()
@@ -94,6 +114,14 @@ class ADMM(nn.Module, LandscapeWrapper):
 
 
 def execute():
+    """
+    A function which generates c signals (via utills modoule), each signal is of the form x_i = Hs+w s.t w~N(0,0.001)
+    for each signal, the function performs an ADMM reconstruction to retrieve s^*. Furthermore, for each signal x, we perform
+    BIM adversarial attack with different epsilon, aggregate the norm ||s^*-s^*_adv||_{2} and present the results.
+    The function also plots the Loss surface of x_{n-1} in various forms (3d,2d,1d) and all related graphs.
+    To extract the full norm graph, one should execute ista attack, save dist_total parameter, and perform the same for
+    admm, than run utills.py __main__
+    """
     signals = []
 
     # ISTA_min_distances = np.load('stack/version1/matrices/ISTA_total_norm.npy')
@@ -102,6 +130,7 @@ def execute():
     dist_total = np.zeros((sig_amount, r_step))
     radius_vec = np.linspace(eps_min, eps_max, r_step)
 
+    # Generate signals
     for i in range(sig_amount):
         signals.append(generate_signal())
 
@@ -114,18 +143,18 @@ def execute():
         print("#### ADMM signal {0} convergence: iterations: {1} ####".format(sig_idx, len(err_gt)))
         s_gt = s_gt.detach()
 
-        for r_idx, r in enumerate(radius_vec):
+        for e_idx, attack_eps in enumerate(radius_vec):
             # print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
 
             ADMM_adv_model = ADMM.create_ADMM()
 
-            adv_x, delta = BIM(ADMM_adv_model, x_original, s_original, eps=r)
+            adv_x, delta = BIM(ADMM_adv_model, x_original, s_original, eps=attack_eps)
             adv_x = adv_x.detach()
 
             s_attacked, err_attacked = ADMM_adv_model(adv_x)
             # print("Attacked-ISTA convergence: iterations: {0}".format(len(err_attacked)))
 
-            dist_total[sig_idx, r_idx] = (s_gt - s_attacked).norm(2).item()
+            dist_total[sig_idx, e_idx] = (s_gt - s_attacked).norm(2).item()
 
     # np.save('data/stack/version1/matrices/ADMM_total_norm.npy', dist_total)
 

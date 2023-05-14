@@ -3,21 +3,9 @@ __author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-import matplotlib
-from IPython.display import set_matplotlib_formats
-import seaborn as sns
 
-from utills import save_fig
-from beam_forming import H_test, N, L, B, num_of_iter_pga, ProjGA
-
-set_matplotlib_formats('svg', 'pdf')
-matplotlib.rcParams['lines.linewidth'] = 2.0
-
-sns.set()
-
-# Fetching the device that will be used throughout this notebook
-device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
-print("Using device", device)
+from beam_forming import N, L, B, num_of_iter_pga, ProjGA, H_test
+from utills import device
 
 
 def beamforming_BIM(model, h, radius=0.1, alpha=1, steps=30):
@@ -82,20 +70,20 @@ def execute():
         for r_idx, r in enumerate(attack_radius):
             bf_model = ProjGA(mu)
             # print("Performing BIM to get Adversarial Perturbation - epsilon: {0}".format(r))
-            adv_h, _, wa_hat, wd_hat = beamforming_BIM(bf_model, original_h, radius=r)
-            adv_h = adv_h.detach()
+            _, _, wa_hat, wd_hat = beamforming_BIM(bf_model, original_h, radius=r)
+
             # print("Norm2(H_gt-H_adv): {0}".format((original_h - adv_h).norm(2)))
             attacked_rate = classical_model.objec(h=original_h, wa=wa_hat, wd=wd_hat).norm(2).item()
             # print("BeamForming Rate (attacked): {0}".format(attacked_rate))
 
             rates[h_idx, r_idx] = attacked_rate
 
-    np.save('rates_avg.npy', rates)
+    # np.save('rates_avg.npy', rates)
 
     plt.figure()
     plt.plot(attack_radius, rates.mean(axis=0))
     plt.xlabel('$\epsilon$')
-    plt.ylabel('${\|\|R\|\|}_{2}$')
+    plt.ylabel('Achievable Rate')
     plt.show()
 
 

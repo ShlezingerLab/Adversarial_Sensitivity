@@ -14,17 +14,16 @@ from IPython.display import set_matplotlib_formats
 set_matplotlib_formats('svg', 'pdf')
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
-FIGURES_PATH = r'graphs/'
-MATRICES_PATH = r'matrices/'
+FIGURES_PATH = r'data/graphs/'
+MATRICES_PATH = r'data/matrices/'
 
 np.random.seed(0)
-
 # Fetching the device that will be used throughout this notebook
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
 
 # CONSTANTS
-r_step = 49
+r_step = 40
 sig_amount = 100
 loss3d_res_steps = 800
 
@@ -113,8 +112,8 @@ def plot_2d_surface(z_gt, z_adv, fname):
     cs = plt.contour(z_gt)
     plt.clabel(cs, inline=1, fontsize=10)
     plt.colorbar(cs)
-    cs.set_xlabel(r'$u_2$')
-    cs.set_ylabel(r'$u_1$')
+    plt.xlabel(r'$u_2$')
+    plt.ylabel(r'$u_1$')
     # plt.style.use('plot_style.txt')
     # plt.title("Loss surface of L_truth(s) = 0.5*||x-Hs|| + rho*||s| s.t (rho=0.01), epsilon=0.1")
     plt.savefig("ISTA_2D_LOSS_GT.pdf", bbox_inches='tight')
@@ -123,8 +122,8 @@ def plot_2d_surface(z_gt, z_adv, fname):
     cs = plt.contour(z_adv)
     plt.clabel(cs, inline=1, fontsize=10)
     plt.colorbar(cs)
-    cs.set_xlabel(r'$u_2$')
-    cs.set_ylabel(r'$u_1$')
+    plt.xlabel(r'$u_2$')
+    plt.ylabel(r'$u_1$')
     # plt.style.use('plot_style.txt')
     save_fig(fname)
     plt.show()
@@ -187,7 +186,7 @@ def plot_conv_rec_graph(signal_a, signal_b,s_gt, errors_a, errors_b,
 
 def plot_norm_graph(radius_vec, min_dist, fname):
     plt.figure()
-    plt.style.use('plot_style.txt')
+    # plt.style.use('plot_style.txt')
     plt.plot(radius_vec, min_dist)
     plt.xlabel(r'$\epsilon$')
     plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
@@ -226,10 +225,10 @@ def save_fig(fname):
 
 if __name__ == '__main__':
     radius_vec = np.linspace(eps_min, eps_max, r_step)
-    ISTA_min_distances = np.load('stack/version1/matrices/ISTA_total_norm.npy')
-    ADMM_min_distances = np.load('stack/version1/matrices/ADMM_total_norm.npy')
+    ISTA_min_distances = np.load('data/stack/version1/matrices/ISTA_total_norm.npy')
+    ADMM_min_distances = np.load('data/stack/version1/matrices/ADMM_total_norm.npy')
     plt.figure()
-    plt.style.use('plot_style.txt')
+    # plt.style.use('plot_style.txt')
 
     plt.plot(radius_vec, ADMM_min_distances.mean(axis=0), '.-')
     plt.plot(radius_vec, ISTA_min_distances.mean(axis=0))

@@ -26,12 +26,13 @@ H_train = torch.randn(B, train_size, N, M)
 H_valid = torch.randn(B, valid_size, N, M)
 # test data set
 # H_test = torch.randn(B, test_size, N, M)
-H_test = torch.load(r'matrices/H_for_Elad_16x100x4x12.pt')
+
 
 # ---- Classical PGA ----
 # parameters defining
 num_of_iter_pga = 30
 mu = torch.tensor([[50 * 1e-2] * (B + 1)] * num_of_iter_pga, requires_grad=False)
+H_test = torch.load(r'data/matrices/H_for_Elad_16x100x4x12.pt')
 
 
 class ProjGA(nn.Module):

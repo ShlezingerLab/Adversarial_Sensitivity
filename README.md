@@ -1,5 +1,6 @@
 # ADVERSARIAL_SENSITIVTY
 
-One can trigger each attack via the main.py
-via running the command python.py main.py --ista --admm -beamforming.
+One can trigger each attack via running the command python main.py
+with the appropriate flag --ista --admm --beamforming.
 while each flag performs a different attack as mentioned in the paper.
+

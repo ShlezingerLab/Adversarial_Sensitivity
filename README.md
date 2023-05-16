@@ -1,6 +1,6 @@
 # ADVERSARIAL_SENSITIVTY
 
-Official repository - ON THE INTERPRETABLE ADVERSARIAL SENSITIVITY OF ITERATIVE OPTIMIZERS by Elad Sofer <elad.g.sofer@gmail.com> & Nir Shlezinger <nirshl@bgu.ac.il>
+Official repository - ON THE INTERPRETABLE ADVERSARIAL SENSITIVITY OF ITERATIVE OPTIMIZERS by Annonymous
 
 
 One can trigger each attack via running the command python main.py

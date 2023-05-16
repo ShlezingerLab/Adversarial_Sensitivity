@@ -24,6 +24,31 @@ lambda_ = 12.5
 
 
 class ADMM(nn.Module, LandscapeWrapper):
+    """
+    Implements the Alternating Direction Method of Multipliers (ADMM) algorithm for sparse signal recovery.
+    Args:
+        H (torch.Tensor): Sensing matrix.
+        mu (float): Solver parameter for updating u.
+        lambda_ (float): Regularization parameter for L1-norm penalty.
+        max_iter (int): Maximum number of iterations.
+        eps (float): Convergence threshold.
+        rho (float): Penalty parameter.
+
+    Attributes:
+        mu (float): Solver parameter for updating u.
+        max_iter (int): Maximum number of iterations.
+        eps (float): Convergence threshold.
+        rho (float): Penalty parameter.
+        lambda_ (float): Regularization parameter for L1-norm penalty.
+        H (torch.Tensor): Sensing matrix.
+        left_term (torch.Tensor): Left term used for updating s.
+        s (torch.Tensor): Initial estimate of the sparse signal.
+        u (torch.Tensor): Variable used in ADMM algorithm.
+        v (torch.Tensor): Variable used in ADMM algorithm.
+        model_params (nn.Parameter): Model parameters used for visualization.
+
+    """
+
     def __init__(self, H, mu, lambda_, max_iter, eps, rho):
         super(ADMM, self).__init__()
 
@@ -49,14 +74,22 @@ class ADMM(nn.Module, LandscapeWrapper):
 
     @staticmethod
     def shrinkage(x, beta):
-        # Shrinking towards 0 by Beta parameter.
+        """
+        Applies the shrinkage operator to the input tensor 'x' with a threshold of 'beta'.
+        :param x: Input tensor.
+        :param beta: Threshold value.
+        :return: Resulting tensor after applying shrinkage.
+        """
         return torch.mul(torch.sign(x), torch.max(torch.abs(x) - beta, torch.zeros((m, 1))))
 
     def forward(self, x):
         """
-        Convergence process of the ADMM algorithm.
-        :param x: observation x, while x=Hs+w
-        :return: s^*
+        Performs ISTA reconstruction on the input signal 'x'.
+        :param x: Input signal to reconstruct. (torch.Tensor)
+
+        :returns
+        torch.Tensor: Reconstructed sparse signal.
+        list: List of recovery errors at each iteration.
         """
         recovery_errors = []
         for k in range(self.max_iter):
@@ -81,16 +114,16 @@ class ADMM(nn.Module, LandscapeWrapper):
 
     def set_model_visualization_params(self):
         """
-        Initialize S as a NN parameter to support loss-landscapes API visualization.
+        Sets the model parameters for visualization for the visualize_model module to operate.
         """
         self.model_params = nn.Parameter(self.s.clone().detach(), requires_grad=False)
 
     def loss_func(self, s, x_sig):
         """
-        Calculate the Lasso loss function for a given x, s signals.
-        :param s: s, sparse signal
-        :param x_sig: x = Hs+w s.t w~N(0,0.001)
-        :return: The Lasso loss for a given x, s.
+        Computes the loss function given the estimated sparse signal 's' and its observation 'x_sig'.
+        :param s: Estimated sparse signal.
+        :param x_sig: observation signal x = Hs + w, where w is a Gaussian noise.
+        :return: Loss value.
         """
         return 0.5 * torch.sum((torch.matmul(self.H, s) - x_sig) ** 2).item() + self.rho * s.norm(p=1).item()
 
@@ -109,18 +142,30 @@ class ADMM(nn.Module, LandscapeWrapper):
         return x
 
     @classmethod
-    def create_ADMM(cls, H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_threshold=eps_threshold):
+    def create_ADMM(cls, H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_threshold=eps_threshold,
+                    lambda_=lambda_):
+        """
+        Creates an instance of the ADMM class with the specified parameters.
+        :param H: Sensing matrix.
+        :param step_size: Solver parameter for updating u.
+        :param max_iter: Maximum number of iterations.
+        :param lambda_: Regularization parameter for L1-norm penalty.
+        :param eps_threshold: Convergence threshold.
+        :param rho: Penalty parameter.
+        :return: ADMM object.
+        """
         return cls(H, step_size, lambda_, max_iter, eps_threshold, rho)
 
 
 def execute():
     """
-    A function which generates c signals (via utills modoule), each signal is of the form x_i = Hs+w s.t w~N(0,0.001)
-    for each signal, the function performs an ADMM reconstruction to retrieve s^*. Furthermore, for each signal x, we perform
-    BIM adversarial attack with different epsilon, aggregate the norm ||s^*-s^*_adv||_{2} and present the results.
-    The function also plots the Loss surface of x_{n-1} in various forms (3d,2d,1d) and all related graphs.
-    To extract the full norm graph, one should execute ista attack, save dist_total parameter, and perform the same for
-    admm, than run utills.py __main__
+    Perform a series of operations on generated signals:
+    1. Generate 'c' (set to 100) signals of the form x_i = Hs + w, where w follows a Gaussian distribution.
+    2. Perform ADMM reconstruction on each signal x to obtain s^*.
+    3. Perform BIM adversarial attack with different epsilon values to obtain x_{adv}.
+    4. Perform ADMM reconstruction on each signal x_{adv} to obtain s_{adv}.
+    5. Aggregate the L2 norm ||s^* - s^*_{adv}|| for each signal and epsilon value.
+    6. Plot the loss surfaces in various forms (3D, 2D, 1D) and other related graphs.
     """
     signals = []
 

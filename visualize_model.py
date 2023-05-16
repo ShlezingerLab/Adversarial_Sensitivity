@@ -1,16 +1,25 @@
 import math
 import numpy as np
 from abc import ABC
+
 from loss_landscapes.model_interface.model_wrapper import wrap_model
 from loss_landscapes.model_interface.model_parameters import rand_u_like
 
 
 class LandscapeWrapper(ABC):
     """
-    This abstract class overrides part of the loss_landscapes API (`https://arxiv.org/abs/1712.09913v3`)
-     for our paper purposes.
+    This abstract class overrides the functions linear_interpolation, random_plane which part of
+    the loss_landscapes API (`https://arxiv.org/abs/1712.09913v3`) for our paper purposes.
+    The  functions are for approximating loss/return landscapes in one and two dimensions.
     """
-    def get_grid_vectors(self, model, adv_model, deepcopy_model=True, steps=40, distance=1):
+    def get_grid_vectors(self, model, adv_model, deepcopy_model=True):
+        """
+        :param model: The model, s^*
+        :param adv_model: The adversarial model, s^*_{adv}
+        :param deepcopy_model: Whether or no working upon the object or upon a copy
+        :return: 2 direction vectors, u1 =  s^* - s^*_{adv}. u2 is perpendicular to u1 via using Grahm Shmidt.
+        The function scale the norms to be equal s.t ||u1||_2 = ||u2||_2
+        """
         # Model parameters
         model_start_wrapper = wrap_model(self.copy(model) if deepcopy_model else model)
         adv_model_start_wrapper = wrap_model(self.copy(adv_model) if deepcopy_model else adv_model)
@@ -21,19 +30,19 @@ class LandscapeWrapper(ABC):
         model_gt = model_start_wrapper.get_module_parameters()
         model_adv = adv_model_start_wrapper.get_module_parameters()
 
-        dir_one = (model_adv - model_gt)
+        u1 = (model_adv - model_gt)
 
-        dir_two = rand_u_like(dir_one)
-        # Grahm Shimdt to achieve the orthogonal vector -
-        dir_two = dir_two - dir_two.dot(dir_one) * dir_one / math.pow(dir_one.model_norm(2), 2)
-        # Equal the vector's norm size
-        dir_two = (dir_two / dir_two.model_norm(2)) * dir_one.model_norm(2)
+        u2 = rand_u_like(u1)
+        # Grahm Shimdt to achieve the orthogonal vector
+        u2 = u2 - u2.dot(u1) * u1 / math.pow(u1.model_norm(2), 2)
 
-        return dir_one, dir_two
+        # Normalize u2 via u1 norm, s.t ||u1||_2=||u2||_2
+        u2 = (u2 / u2.model_norm(2)) * u1.model_norm(2)
+
+        return u1, u2
 
     def linear_interpolation(self, model_start,
-                             model_end, x_sig,
-                             steps=100, deepcopy_model=False) -> np.ndarray:
+                             model_end, x_sig, steps=100, deepcopy_model=False) -> np.ndarray:
         """
         Returns the computed value of the evaluation function applied to the model or
         agent along a linear subspace of the parameter space defined by two end points.
@@ -54,10 +63,6 @@ class LandscapeWrapper(ABC):
         flatness of minima or maxima is affected by the scale of the neural network weights.
         For more details, see `https://arxiv.org/abs/1712.09913v3`. It is recommended to
         use random_line() with filter normalization instead.
-
-        The Metric supplied has to be a subclass of the loss_landscapes.metrics.Metric class,
-        and must specify a procedure whereby the model passed to it is evaluated on the
-        task of interest, returning the resulting quantity (such as loss, loss gradient, etc).
 
         :param model_start: the model defining the start point of the line in parameter space
         :param model_end: the model defining the end point of the line in parameter space
@@ -93,7 +98,7 @@ class LandscapeWrapper(ABC):
 
         return np.array(data_values)
 
-    def random_plane(self, gt_model, adv_model, x, adv_x, distance=3, steps=20, normalization='model',
+    def random_plane(self, gt_model, adv_model, x, adv_x, distance=3, steps=20,
                      deepcopy_model=False, dir_one=None, dir_two=None) -> np.ndarray:
         """
         Returns the computed value of the evaluation function applied to the model or agent along a planar
@@ -106,36 +111,17 @@ class LandscapeWrapper(ABC):
         plane defined by the two random directions, from the start point up to the maximum
         distance in both directions.
 
-        Note that the dimensionality of the model parameters has an impact on the expected
-        length of a uniformly sampled other in parameter space. That is, the more parameters
-        a model has, the longer the distance in the random other's direction should be,
-        in order to see meaningful change in individual parameters. Normalizing the
-        direction other according to the model's current parameter values, which is supported
-        through the 'normalization' parameter, helps reduce the impact of the distance
-        parameter. In future releases, the distance parameter will refer to the maximum change
-        in an individual parameter, rather than the length of the random direction other.
-
-        Note also that a simple planar approximation with randomly sampled directions can produce
-        misleading approximations of the loss landscape due to the scale invariance of neural
-        networks. The sharpness/flatness of minima or maxima is affected by the scale of the neural
-        network weights. For more details, see `https://arxiv.org/abs/1712.09913v3`. It is
-        recommended to normalize the directions, preferably with the 'filter' option.
-
-        The Metric supplied has to be a subclass of the loss_landscapes.metrics.Metric class,
-        and must specify a procedure whereby the model passed to it is evaluated on the
-        task of interest, returning the resulting quantity (such as loss, loss gradient, etc).
+        The Metric which is used to evaluate the loss points is under gt_model.loss_func
 
         :param gt_model: the model defining the origin point of the plane in parameter space
         :param distance: maximum distance in parameter space from the start point
         :param steps: at how many steps from start to end the model is evaluated
-        :param normalization: normalization of direction vectors, must be one of 'filter', 'layer', 'model'
         :param deepcopy_model: indicates whether the method will deepcopy the model(s) to avoid aliasing
         :return: 1-d array of loss values along the line connecting start and end models
         """
 
         # Copy the relevant models
         gt_model_start_point = wrap_model(self.copy(gt_model) if deepcopy_model else gt_model)
-
         adv_model_start_wrapper = wrap_model(self.copy(adv_model) if deepcopy_model else adv_model)
 
         gt_start_point = gt_model_start_point.get_module_parameters()
@@ -164,8 +150,7 @@ class LandscapeWrapper(ABC):
         # a little convoluted to avoid constructive operations. Fundamentally we generate the matrix
         # [[start_point + (dir_one * i) + (dir_two * j) for j in range(steps)] for i in range(steps].
         for i in range(steps):
-            gt_data_column = []
-            adv_data_column = []
+            gt_data_column, adv_data_column = [], []
 
             for j in range(steps):
                 # for every other column, reverse the order in which the column is generated
@@ -175,7 +160,6 @@ class LandscapeWrapper(ABC):
                     avg_start_point.add_(dir_two)
 
                     s = avg_start_point.parameters[0]
-
                     # Do you think is it worth to accumulate average loss? for many sparse signals examples?
                     gt_data_column.append(gt_model.loss_func(s, x))
                     adv_data_column.append(adv_model.loss_func(s, adv_x))

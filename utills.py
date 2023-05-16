@@ -14,6 +14,10 @@ from IPython.display import set_matplotlib_formats
 set_matplotlib_formats('svg', 'pdf')
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
+"""
+This module contains the project's utilities such as plotting utilities, BIM attack, dataset generation function
+"""
+
 FIGURES_PATH = r'data/graphs/'
 MATRICES_PATH = r'data/matrices/'
 
@@ -40,7 +44,9 @@ H = torch.from_numpy(H).float()
 
 
 def generate_signal():
-    """Generate sparse signal s and it's observation x, x=Hs+w s.t w~N(0,0.001) """
+    """
+    Generate a sparse signal 's' and its observation 'x' using the model x = Hs + w, where w is a Gaussian noise.
+    """
     s = np.zeros((1, m))
     index_k = np.random.choice(m, k, replace=False)
     s[:, index_k] = 0.5 * np.random.randn(k, 1).reshape([1, k])
@@ -54,13 +60,14 @@ def generate_signal():
 
 def BIM(model, x, s_gt, eps=0.1, alpha=0.01, steps=5):
     """
-    Performing BIM adversarial attack for sparse-recovery casestudy.
-    :param model: ADMM/ISTA object - The attacked model
+    The BIM (Basic Iterative Method) adversarial attack is a technique used to generate adversarial examples usually
+     for machine learning models. This function aims to attack ADMM/ISTA optimizers.
+    :param model: ADMM/ISTA object, the target machine learning model to be attacked.
     :param x: torch vector x - x=Hs+w s.t w~N(0,0.001)
-    :param s_gt: torch vector s - s_gt=s^*
-    :param eps: eps>0 - attack radius
-    :param alpha: BIM step-size
-    :param steps: how many BIM iterations to perform
+    :param s_gt: torch vector which represents s^*
+    :param eps:   A small perturbation magnitude that controls the strength of the attack
+    :param alpha: A step size parameter for adjusting the perturbation at each iteration
+    :param steps: The number of iterations to perform the attack.
     :return: adversarial x signal and the pertubation which was applied.
     """
     x = x.clone().to(device)
@@ -100,6 +107,14 @@ def BIM(model, x, s_gt, eps=0.1, alpha=0.01, steps=5):
 
 
 def plot_1d_surface(gt_line, adv_line, fname):
+    """
+    The plot_loss_surfaces_u1 function is used to plot the loss surfaces along the u1 axis in a 1D dimension.
+    To understand more about the visualization process, refer to the linear_interpolation function under the visualize_model module.
+    :param gt_line: a vector which includes loss surface samples along u1 axis of L_{op}
+    :param adv_line: a vector which includes loss surface samples along u1 axis of L_{adv}
+    fname: The file name to save the figure to.
+    :return:
+    """
     plt.figure()
     plt.plot(np.arange(len(gt_line)), gt_line)
     plt.plot(np.arange(len(adv_line)), adv_line)
@@ -110,6 +125,15 @@ def plot_1d_surface(gt_line, adv_line, fname):
 
 
 def plot_2d_surface(z_gt, z_adv, fname):
+    """
+    This plot_2d_surface function is used to plot contour plots of the loss surfaces instead of 3D plots as
+    function plot_3d_surface executes
+     To understand more about the visualization process, refer to the random_plane function under the visualize_model module.
+    :param z_adv: Grid of loss values for L_adv.
+    :param z_gt: Grid of loss values for L_op.
+    :param steps: The dimension of the grids Z_adv and Z_gt.
+    :param fname: The file name to save the figure to.
+    """
     plt.figure()
     cs = plt.contour(z_gt)
     plt.clabel(cs, inline=1, fontsize=10)
@@ -132,6 +156,15 @@ def plot_2d_surface(z_gt, z_adv, fname):
 
 
 def plot_3d_surface(z_adv, z_gt, steps, fname):
+    """
+    This plot_3d_surface function is used to plot Figure 4,
+    which displays 3D loss surfaces L_adv and L_op.
+     To understand more about the visualization process, refer to the random_plane function under the visualize_model module.
+    :param z_adv: Grid of loss values for L_adv.
+    :param z_gt: Grid of loss values for L_op.
+    :param steps: The dimension of the grids Z_adv and Z_gt.
+    :param fname: The file name to save the figure to.
+    """
     x, y = np.arange(0, steps), np.arange(0, steps)
     x_vec, y_vec = np.meshgrid(x, y)
 
@@ -163,6 +196,18 @@ def plot_3d_surface(z_adv, z_gt, steps, fname):
 
 def plot_conv_rec_graph(signal_a, signal_b,s_gt, errors_a, errors_b,
                         fname="convergence_ADMM.pdf"):
+    """
+    This function plot_figure3 is used to plot Figure 3. It creates a figure with two subplots.
+     The first subplot displays three sparsed signals: signal_a, signal_b, and s_gt (ground truth signal).
+      The second subplot shows the convergence errors for signal_a and signal_b over the iterations.
+
+    :param signal_a: Sparse signal vector for Signal A.
+    :param signal_b: Sparse signal vector for Signal B.
+    :param s_gt: Sparse signal vector for the ground truth signal.
+    :param errors_a: Sparse signal vector for the ground truth signal.
+    :param errors_b: Error vector holding the errors along the convergence process for Signal B.
+    :param fname: the file name to save the figure to
+    """
     plt.figure(figsize=(8, 8))
 
     plt.subplot(2, 1, 1)
@@ -187,8 +232,16 @@ def plot_conv_rec_graph(signal_a, signal_b,s_gt, errors_a, errors_b,
 
 
 def plot_norm_graph(radius_vec, min_dist, fname):
+
+    """
+    Plots the norm graph, showing the relationship between the radius (epsilon) and the minimum distance between
+    the optimal signal and the adversarial signal.
+
+    :param radius_vec: A vector of radius values (epsilon).
+    :param min_dist: A vector of corresponding minimum distances between the optimal signal and the adversarial signal.
+    :param fname: The file name to save the figure to.
+    """
     plt.figure()
-    # plt.style.use('plot_style.txt')
     plt.plot(radius_vec, min_dist)
     plt.xlabel(r'$\epsilon$')
     plt.ylabel(r'${\|\| {s}^{\star} - {s}_{\rm adv}^{\star} \|\|}_2$')
@@ -197,6 +250,18 @@ def plot_norm_graph(radius_vec, min_dist, fname):
 
 
 def plot_observations(adv_x, x, fname):
+    """
+    Plots the observations of x_{adv} and x signals in two subplots.
+     The first subplot shows the values of adv_x as a black line, while the second subplot shows the values of x as a red line.
+      Both subplots have grids, x-axis labels ("Index"), and y-axis labels ("Value"). The legend indicates the line corresponding to each subplot.
+      The second subplot is slightly adjusted in position to make room for the legend.
+       Finally, the figure is saved as fname and displayed.
+    :param adv_x: Tensor containing the values of adv_x.
+    :param: Tensor containing the values of x.
+    :param fname: File name to save the figure.
+
+    :return:
+    """
     plt.style.use('default')
     plt.figure()
 
@@ -222,6 +287,10 @@ def plot_observations(adv_x, x, fname):
 
 
 def save_fig(fname):
+    """
+    The function saves the current figure to the specified file by using plt.savefig with the file path obtained by joining FIGURES_PATH and fname
+    :param fname:  File name or path to save the figure.
+    """
     plt.savefig(os.path.join(FIGURES_PATH, fname), bbox_inches='tight')
 
 

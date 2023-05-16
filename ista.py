@@ -25,6 +25,24 @@ eps_threshold = 1e-3
 
 # ISTA
 class ISTA(nn.Module, LandscapeWrapper):
+    """
+       Implements the Iterative Shrinkage-Thresholding Algorithm (ISTA) for sparse signal recovery.
+       Args:
+           H (torch.Tensor): Sensing matrix.
+           mu (float): Solver parameter for gradient descent step.
+           rho (float): Regularization parameter for L1-norm penalty.
+           max_iter (int): Maximum number of iterations.
+           eps (float): Convergence threshold.
+
+       Attributes:
+           H (torch.Tensor): Sensing matrix.
+           rho (float): Regularization parameter for L1-norm penalty.
+           mu (float): Solver parameter for gradient descent step.
+           max_iter (int): Maximum number of iterations.
+           eps (float): Convergence threshold.
+           s (torch.Tensor): Initial estimate of the sparse signal.
+           model_params (nn.Parameter): Model parameters used for visualization.
+       """
     def __init__(self, H, mu, rho, max_iter, eps):
         super(ISTA, self).__init__()
 
@@ -43,11 +61,22 @@ class ISTA(nn.Module, LandscapeWrapper):
 
     @staticmethod
     def shrinkage(x, beta):
+        """
+        Applies the shrinkage operator to the input tensor 'x' with a threshold of 'beta'.
+        :param x: Input tensor.
+        :param beta: Threshold value.
+        :return: Resulting tensor after applying shrinkage.
+        """
         # Shrinking towards 0 by Beta parameter.
         return torch.mul(torch.sign(x), torch.max(torch.abs(x) - beta, torch.zeros((m, 1))))
 
     def forward(self, x):
-
+        """
+        Performs ISTA reconstruction on the input signal 'x'.
+        :param x: Input signal to reconstruct. (torch.Tensor)
+        :return  torch.Tensor: Reconstructed sparse signal.
+        :return list: List of recovery errors at each iteration.
+        """
         self.s = torch.zeros((H.shape[1], 1))
         recovery_errors = []
 
@@ -56,7 +85,6 @@ class ISTA(nn.Module, LandscapeWrapper):
             # proximal gradient step
             temp = torch.matmul(self.H, s_prev) - x
 
-            # why "-" instead of "+" ?
             g_grad = s_prev - torch.mul(self.mu, torch.matmul(self.H.T, temp))
             self.s = self.shrinkage(g_grad, np.multiply(self.mu, self.rho))
 
@@ -66,36 +94,57 @@ class ISTA(nn.Module, LandscapeWrapper):
 
             # save recovery error
             error = self.loss_func(self.s, x)
-            # if ii == 647:
-            #     pass
-            # print("Step: {0} Error: {1}".format(ii, error))
             recovery_errors.append(error)
 
         return self.s, recovery_errors
 
     def set_model_visualization_params(self):
+        """
+        Sets the model parameters for visualization for the visualize_model module to operate.
+        """
         self.model_params = nn.Parameter(self.s.detach(), requires_grad=False)
 
     def loss_func(self, s, x_sig):
+        """
+        Computes the loss function given the estimated sparse signal 's' and its observation 'x_sig'.
+        :param s: Estimated sparse signal.
+        :param x_sig: observation signal x = Hs + w, where w is a Gaussian noise.
+        :return: Loss value.
+        """
         return 0.5 * torch.sum((torch.matmul(self.H, s) - x_sig) ** 2).item() + self.rho * s.norm(p=1).item()
 
     @staticmethod
     def copy(other):
+        """
+        Creates a deep copy of the 'other' object.
+        Args: other (ISTA): ISTA object to copy.
+        Returns: ISTA: Deep copy of the 'other' object.
+        """
         return copy.deepcopy(other)
 
     @classmethod
     def create_ISTA(cls, H=H, step_size=step_size, rho=rho, max_iter=max_iter, eps_threshold=eps_threshold):
+        """
+        Creates an instance of the ISTA class with the specified parameters.
+        :param H: Sensing matrix.
+        :param step_size: Solver parameter for gradient descent step.
+        :param rho: Regularization parameter for L1-norm penalty.
+        :param max_iter: Maximum number of iterations.
+        :param eps_threshold: Convergence threshold.
+        :return: ISTA object.
+        """
         return cls(H, step_size, rho, max_iter, eps_threshold)
 
 
 def execute():
     """
-    A function which generates c signals (via utills modoule), each signal is of the form x_i = Hs+w s.t w~N(0,0.001)
-    for each signal, the function performs an ISTA reconstruction to retrieve s^*. Furthermore, for each signal x, we perform
-    BIM adversarial attack with different epsilon, aggregate the norm ||s^*-s^*_adv||_{2} and present the results.
-    The function also plots the Loss surface of x_{n-1} in various forms (3d,2d,1d) and all related graphs.
-    To extract the full norm graph, one should execute ista attack, save dist_total parameter, and perform the same for
-    admm, than run utills.py __main__
+    Perform a series of operations on generated signals:
+    1. Generate 'c' (set to 100) signals of the form x_i = Hs + w, where w follows a Gaussian distribution.
+    2. Perform ISTA reconstruction on each signal x to obtain s^*.
+    3. Perform BIM adversarial attack with different epsilon values to obtain x_{adv}.
+    4. Perform ISTA reconstruction on each signal x_{adv} to obtain s_{adv}.
+    5. Aggregate the L2 norm ||s^* - s^*_{adv}|| for each signal and epsilon value.
+    6. Plot the loss surfaces in various forms (3D, 2D, 1D) and other related graphs.
     """
     signals = []
     dist_total = np.zeros((sig_amount, r_step))

@@ -13,5 +13,4 @@ Run the main.py script using the appropriate flag to execute each attack and gen
 --beamforming: Executes the attack using the Hybrid Beamforming technique and generates the related graphs.
 
 Each flag corresponds to a distinct case study discussed in the paper.
-
 Feel free to explore the provided code and experiment with different configurations. If you have any questions or require further assistance, please don't hesitate to reach out to us.

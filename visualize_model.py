@@ -11,9 +11,9 @@ from loss_landscapes.model_interface.model_parameters import rand_u_like
 
 class LandscapeWrapper(ABC):
     """
-    This abstract class provides override the implementation for the functions linear_interpolation and random_plane,
-    which are part of the loss_landscapes library (`https://arxiv.org/abs/1712.09913v3`) and are used for our paper.
-    These functions approximate loss/return landscapes in one and two dimensions.
+    This abstract class provides custom implementations for the functions linear_interpolation and random_plane
+    from the loss_landscapes library (`https://arxiv.org/abs/1712.09913v3`) that are tailored to our specific needs for the paper.
+    These functions are utilized to approximate loss/return landscapes in one and two dimensions.
     """
     def get_grid_vectors(self, model, adv_model, deepcopy_model=True):
         """
@@ -38,7 +38,7 @@ class LandscapeWrapper(ABC):
         u1 = (model_adv - model_gt)
 
         u2 = rand_u_like(u1)
-        # Grahm Shimdt to achieve the orthogonal vector
+        # Gram–Schmidt process to achieve the orthogonal vector
         u2 = u2 - u2.dot(u1) * u1 / math.pow(u1.model_norm(2), 2)
 
         # Normalize u2 via u1 norm, s.t ||u1||_2=||u2||_2

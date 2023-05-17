@@ -5,9 +5,10 @@ Welcome to the official repository for the research paper titled "On the Interpr
 ## Installation
 To get started, please follow the instructions below to install the necessary requirements:
 
-1. Download/clone this repository.
-2. Navigate the the project directory using **'cd \<folder>'**
-3. Run the command **'pip install -r requirements.txt'** to make sure all necessary packages is installed
+1. Ensure that Python version 3 is installed on your system.
+2. Download or clone this repository to your local machine.
+3. Navigate the the project directory using **'cd \<folder>'** command.
+4. Run the command **'pip install -r requirements.txt'** to install all the necessary packages.
 
 ## Usage
 

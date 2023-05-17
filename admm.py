@@ -60,9 +60,10 @@ class ADMM(nn.Module, LandscapeWrapper):
         self.max_iter = max_iter
         self.eps = eps
 
-        # ρ = 2λ ?
+        # ρ parameter
         self.rho = rho
-        self.lambda_ = lambda_
+        # λ parameter
+        self.lambda_ = lambda_ 
 
         # Objective parameters
         self.H = H

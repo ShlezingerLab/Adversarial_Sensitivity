@@ -11,18 +11,20 @@ from loss_landscapes.model_interface.model_parameters import rand_u_like
 
 class LandscapeWrapper(ABC):
     """
-    This abstract class overrides the functions linear_interpolation, random_plane which part of
-    the loss_landscapes API (`https://arxiv.org/abs/1712.09913v3`) for our paper purposes.
-    The  functions are for approximating loss/return landscapes in one and two dimensions.
+    This abstract class provides override the implementation for the functions linear_interpolation and random_plane,
+    which are part of the loss_landscapes library (`https://arxiv.org/abs/1712.09913v3`) and are used for our paper.
+    These functions approximate loss/return landscapes in one and two dimensions.
     """
     def get_grid_vectors(self, model, adv_model, deepcopy_model=True):
         """
-        :param model: The model, s^*
-        :param adv_model: The adversarial model, s^*_{adv}
-        :param deepcopy_model: Whether or no working upon the object or upon a copy
-        :return: 2 direction vectors, u1 =  s^* - s^*_{adv}. u2 is perpendicular to u1 via using Grahm Shmidt.
-        The function scale the norms to be equal s.t ||u1||_2 = ||u2||_2
-        """
+         Returns two direction vectors: u1 = s^* - s^*_{adv} and u2, which is perpendicular to u1.
+         The function scales the norms to be equal such that ||u1||_2 = ||u2||_2.
+
+         :param model: The model, s^*
+         :param adv_model: The adversarial model, s^*_{adv}
+         :param deepcopy_model: Whether to work on the object or a copy
+         :return: Two direction vectors, u1 and u2
+         """
         # Model parameters
         model_start_wrapper = wrap_model(self.copy(model) if deepcopy_model else model)
         adv_model_start_wrapper = wrap_model(self.copy(adv_model) if deepcopy_model else adv_model)
@@ -163,7 +165,7 @@ class LandscapeWrapper(ABC):
                     avg_start_point.add_(dir_two)
 
                     s = avg_start_point.parameters[0]
-                    # Do you think is it worth to accumulate average loss? for many sparse signals examples?
+                    
                     gt_data_column.append(gt_model.loss_func(s, x))
                     adv_data_column.append(adv_model.loss_func(s, adv_x))
 

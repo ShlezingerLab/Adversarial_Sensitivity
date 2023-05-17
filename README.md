@@ -13,8 +13,8 @@ To get started, please follow the instructions below to install the necessary re
 ## Usage
 
 To replicate the experiments and perform the analysis outlined in the paper, please follow the instructions below:
-
-Run the following commnad: **'python main.py'** using the appropriate flag to execute each attack and generate the associated graphs. The available flags are as follows:
+1. Navigate the the project directory using **'cd \<folder>'** command.
+2. Run the following commnad: **'python main.py'** using the appropriate flag to execute each attack and generate the associated graphs. The available flags are as follows:
 
 **--ista**: Executes the attack using the ISTA (Iterative Soft Thresholding Algorithm) case-study and generates the corresponding graphs.
 

@@ -1,4 +1,4 @@
-__author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
+__author__ = 'Anonymous'
 
 import argparse
 import os

@@ -1,4 +1,4 @@
-__author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
+__author__ = 'Anonymous'
 
 import os
 
@@ -27,12 +27,12 @@ device = torch.device("cpu") if not torch.cuda.is_available() else torch.device(
 print("Using device", device)
 
 # Attack configuration
-r_step = 40
-sig_amount = 100
+r_step = 2
+sig_amount = 2
 eps_min, eps_max = 0.01 * 0.5, 0.05
 
 # Loss-surface visualization resolution
-loss3d_res_steps = 800
+loss3d_res_steps = 40
 
 # Signal generation configuration
 m, n, k = 1000, 256, 5

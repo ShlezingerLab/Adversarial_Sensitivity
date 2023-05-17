@@ -1,3 +1,6 @@
+__author__ = 'Anonymous'
+
+
 import math
 import numpy as np
 from abc import ABC

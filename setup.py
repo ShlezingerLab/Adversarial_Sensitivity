@@ -1,3 +1,6 @@
+__author__ = 'Anonymous'
+
+
 from setuptools import setup, find_packages
 
 with open('requirements.txt') as f:
@@ -7,8 +10,8 @@ with open('requirements.txt') as f:
 setup(
     name='adversarial sensitivity',
     version='1.0.0',
-    author='Elad Sofer',
-    author_email='elad.g.sofer@gmail.com',
+    author='Anonymous',
+    author_email='Anonymous@gmail.com',
     description='Description of your package',
     packages=find_packages(),
     install_requires=[],

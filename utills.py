@@ -20,8 +20,8 @@ device = torch.device("cpu") if not torch.cuda.is_available() else torch.device(
 print("Using device", device)
 
 """
-This module comprises various utility functions:
- 1. for the project, including plotting utilities
+This module comprises various utility functions for the project such as:
+ 1. Plotting utilities
  2. BIM attack implementation
  3. dataset generation functions
  4. configuration parameters.

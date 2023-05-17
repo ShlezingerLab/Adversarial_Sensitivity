@@ -6,7 +6,9 @@ To conduct the experiments and analysis described in the paper, follow these ste
 
 To execute each attack and generate related graphs, run the following command: python main.py with the appropriate flag. The available flags are:
 --ista: Performs the attack using the ISTA (Iterative Soft Thresholding Algorithm) method and generates the corresponding graphs.
+
 --admm: Performs the attack using the ADMM (Alternating Direction Method of Multipliers) method and generates the corresponding graphs.
+
 --beamforming: Performs the attack using the Hybrid Beamforming technique and generates the related graphs.
 Each flag corresponds to a different case study presented in the paper.
 

@@ -50,11 +50,12 @@ class LandscapeWrapper(ABC):
                              model_end, x_sig, steps=100, deepcopy_model=False) -> np.ndarray:
         """
         Returns the computed value of the evaluation function applied to the model or
-        agent along a linear subspace of the parameter space defined by two end points.
+        agent along a linear subspace of the parameter space defined by two end points,
+         model_start and model_end.
         The models supplied can be either torch.nn.Module models, or ModelWrapper objects
         from the loss_landscapes library for more complex cases.
 
-        That is, given two models, for both of which the model's parameters define a
+        Given two models, for both of which the model's parameters define a
         vertex in parameter space, the evaluation is computed at the given number of steps
         along the straight line connecting the two vertices. A common choice is to
         use the weights before training and the weights after convergence as the start
@@ -70,6 +71,7 @@ class LandscapeWrapper(ABC):
         use random_line() with filter normalization instead.
 
         :param model_start: the model defining the start point of the line in parameter space
+        :param x_sig: signal x=Hs+w s.t w is Gaussian noise.
         :param model_end: the model defining the end point of the line in parameter space
         :param steps: at how many steps from start to end the model is evaluated
         :param deepcopy_model: indicates whether the method will deepcopy the model(s) to avoid aliasing
@@ -106,23 +108,27 @@ class LandscapeWrapper(ABC):
     def random_plane(self, gt_model, adv_model, x, adv_x, distance=3, steps=20,
                      deepcopy_model=False, dir_one=None, dir_two=None) -> np.ndarray:
         """
-        Returns the computed value of the evaluation function applied to the model or agent along a planar
-        subspace of the parameter space defined by a start point and two randomly sampled directions.
-        The models supplied can be either torch.nn.Module models, or ModelWrapper objects
-        from the loss_landscapes library for more complex cases.
+        Computes and returns the evaluated value of the evaluation function applied to the model or agent along a planar
+        subspace of the parameter space. The subspace is defined by two vectors: dir_one and dir_two.
+        The provided models can be either torch.nn.Module models or ModelWrapper objects from the loss_landscapes library for more complex cases.
 
-        That is, given a neural network model, whose parameters define a point in parameter
-        space, and a distance, the loss is computed at 'steps' * 'steps' points along the
-        plane defined by the two random directions, from the start point up to the maximum
-        distance in both directions.
+        Given a model, which represents a point in the parameter space, and a specified distance, the loss is computed at 'steps' * 'steps' points along the
+        plane defined by the two directions.
 
-        The Metric which is used to evaluate the loss points is under gt_model.loss_func
+        1. The grid's middle point is defined as (s^* + s^*_{adv})/2.
+        2. The evaluation metric used to assess the loss points is obtained from gt_model.loss_func.
+        3. dir_one corresponds to the direction vector u1, and dir_two corresponds to the direction vector u2, which define the grid plane's x and y axes, respectively, while the metric value is represented along the z-axis.
 
-        :param gt_model: the model defining the origin point of the plane in parameter space
-        :param distance: maximum distance in parameter space from the start point
-        :param steps: at how many steps from start to end the model is evaluated
-        :param deepcopy_model: indicates whether the method will deepcopy the model(s) to avoid aliasing
-        :return: 1-d array of loss values along the line connecting start and end models
+        :param gt_model: The model defining s^*.
+        :param adv_model: The model defining s^*_{adv}.
+        :param x: signal x=Hs+w s.t w is Gaussian noise.
+        :param adv_x: signal x_adv, which is x+delta
+        :param distance: The maximum distance in the parameter space from the starting point.
+        :param steps: The number of steps from the starting point to the endpoint at which the models are evaluated.
+        :param dir_one: The direction vector u1 (see get_grid_vectors function for more information).
+        :param dir_two: The direction vector u2 (see get_grid_vectors function for more information).
+        :param deepcopy_model: Indicates whether the method will deepcopy the model(s) to avoid aliasing.
+        :return: A 2D array of loss values along the planar subspace.
         """
 
         # Copy the relevant models

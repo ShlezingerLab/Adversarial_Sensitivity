@@ -6,7 +6,7 @@ Welcome to the official repository for the research paper titled "On the Interpr
 To get started, please follow the instructions below to install the necessary requirements:
 
 1. Download/clone this repository.
-2. Navigate the the project directory using **cd \<folder>**
+2. Navigate the the project directory using **'cd \<folder>'**
 3. Run the command **'pip install -r requirements.txt'** to make sure all necessary packages is installed
 
 ## Usage

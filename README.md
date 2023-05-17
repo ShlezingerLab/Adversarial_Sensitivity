@@ -11,6 +11,6 @@ To execute each attack and generate related graphs, run the following command: p
 --admm: Performs the attack using the ADMM (Alternating Direction Method of Multipliers) method and generates the corresponding graphs.
 
 --beamforming: Performs the attack using the Hybrid Beamforming technique and generates the related graphs.
-Each flag corresponds to a different case study presented in the paper.
 
+Each flag corresponds to a different case study presented in the paper.
 Feel free to explore the code and experiment with different settings. If you have any questions or need further assistance, please reach out to us.

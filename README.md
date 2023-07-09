@@ -1,6 +1,6 @@
 # ADVERSARIAL_SENSITIVTY
 
-Welcome to the official repository for the research paper titled "On the Interpretable Adversarial Sensitivity of Iterative Optimizers" authored by an anonymous researcher.
+Welcome to the official repository for the research paper titled "On the Interpretable Adversarial Sensitivity of Iterative Optimizers" authored by Elad Sofer <elad.g.sofer@gmail.com> and Nir Shlezinger <nirshl@bgu.ac.il> .
 
 ## Installation
 To get started, please follow the instructions below to install the necessary requirements:

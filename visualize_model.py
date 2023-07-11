@@ -1,4 +1,4 @@
-__author__ = 'Anonymous'
+__author__ = 'Elad Sofer <elad.g.sofer@gmail.com>'
 
 
 import math
@@ -67,8 +67,7 @@ class LandscapeWrapper(ABC):
         Note that a simple linear interpolation can produce misleading approximations
         of the loss landscape due to the scale invariance of neural networks. The sharpness/
         flatness of minima or maxima is affected by the scale of the neural network weights.
-        For more details, see `https://arxiv.org/abs/1712.09913v3`. It is recommended to
-        use random_line() with filter normalization instead.
+        For more details, see `https://arxiv.org/abs/1712.09913v3`.
 
         :param model_start: the model defining the start point of the line in parameter space
         :param x_sig: signal x=Hs+w s.t w is Gaussian noise.

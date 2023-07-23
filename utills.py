@@ -11,6 +11,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 from IPython.display import set_matplotlib_formats
 
+########################################################################
+# This module comprises various utility functions for the project such as:
+# 1. Plotting utilities
+# 2. BIM attack implementation
+# 3. dataset generation functions
+# 4. configuration parameters.
+
 set_matplotlib_formats('svg', 'pdf')
 matplotlib.rcParams['lines.linewidth'] = 2.0
 
@@ -18,14 +25,6 @@ np.random.seed(0)
 # Fetching the device that will be used throughout this notebook
 device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 print("Using device", device)
-
-"""
-This module comprises various utility functions for the project such as:
- 1. Plotting utilities
- 2. BIM attack implementation
- 3. dataset generation functions
- 4. configuration parameters.
-"""
 
 FIGURES_PATH = r'data/graphs/'
 MATRICES_PATH = r'data/matrices/'

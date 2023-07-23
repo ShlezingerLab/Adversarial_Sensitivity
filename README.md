@@ -1,4 +1,4 @@
-# ADVERSARIAL_SENSITIVTY
+# ADVERSARIAL_SENSITIVITY
 
 Welcome to the official repository for the research paper titled "On the Interpretable Adversarial Sensitivity of Iterative Optimizers" authored by Elad Sofer and Nir Shlezinger, published in the 33rd IEEE International Workshop on Machine Learning for Signal Processing (MLSP 2023)
 

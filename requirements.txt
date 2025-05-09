@@ -1,9 +1,9 @@
-matplotlib~=3.3.4
-torch~=1.10.0
-setuptools~=52.0.0
-scipy~=1.4.1
-ipython~=7.22.0
-seaborn~=0.11.1
+matplotlib==3.3.4
+torch==1.10.0
+setuptools
+scipy==1.4.1
+ipython==7.22.0
+seaborn==0.11.1
 loss-landscapes==3.0.6
-numpy>=1.23.5
-torchvision>=0.11.1
+numpy>=1.21.0
+torchvision==0.11.1

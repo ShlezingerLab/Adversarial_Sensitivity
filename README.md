@@ -1,4 +1,4 @@
-# ADVERSARIAL_SENSITIVTY
+# ADVERSARIAL_SENSITIVITY
 
 Welcome to the official repository for the research paper titled "On the Interpretable Adversarial Sensitivity of Iterative Optimizers" authored by Elad Sofer and Nir Shlezinger, published in the 33rd IEEE International Workshop on Machine Learning for Signal Processing (MLSP 2023)
 
@@ -9,7 +9,7 @@ The authors are with the School of ECE, Ben-Gurion University of the Negev, Isra
 ## Installation
 To get started, please follow the instructions below to install the necessary requirements:
 
-1. Ensure that Python version 3 is installed on your system.
+1. Ensure that Python version 3.7 is installed on your system.
 2. Download or clone this repository to your local machine.
 3. Navigate to the project directory using **'cd \<folder>'** command.
 4. Run the command **'pip install -r requirements.txt'** to install all the necessary packages.
